@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daus Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    .neon-glow {
+      box-shadow: 0 0 20px currentColor, 0 0 40px currentColor, 0 0 60px currentColor;
+    }
+    
+    .neon-border {
+      box-shadow: 0 0 10px currentColor, 0 0 20px currentColor, inset 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    
+    .glass-effect {
+      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.4);
+    }
+    
+    .focus-ring:focus-visible {
+      outline: 3px solid rgba(139, 92, 246, 0.6);
+      outline-offset: 2px;
+    }
+    
+    .emoji-selector {
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-block;
+    }
+    
+    .emoji-selector:hover {
+      transform: scale(1.15);
+    }
+    
+    .emoji-selector.active {
+      transform: scale(1.25);
+      filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8));
+    }
+    
+    .scroll-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .scroll-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .scroll-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+    
+    .scroll-container::-webkit-scrollbar-thumb {
+      background: rgba(168, 85, 247, 0.5);
+      border-radius: 4px;
+    }
+    
+    .scroll-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(168, 85, 247, 0.7);
+    }
+    
+    .profile-photo-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(168, 85, 247, 0.6);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+    }
+    
+    .profile-photo-display {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid rgba(236, 72, 153, 0.6);
+      box-shadow: 0 0 20px rgba(236, 72, 153, 0.6);
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+      }
+      50% {
+        box-shadow: 0 0 30px currentColor, 0 0 60px currentColor, 0 0 80px currentColor;
+      }
+    }
+    
+    .animate-pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #a855f7, #ec4899, #f59e0b, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal-content {
+      max-width: 500px;
+      width: 100%;
+      border-radius: 16px;
+      padding: 24px;
+    }
+  </style>
+  <script>
+    // ===== CONFIG =====
+    const defaultConfig = {
+      background_color: "#0f0a1e",
+      surface_color: "#1a1333",
+      text_color: "#ffffff",
+      primary_action_color: "#a855f7",
+      secondary_action_color: "#ec4899",
+      
+      font_family: "Inter",
+      font_size: 16,
+      
+      app_title: "Daus Quiz",
+      welcome_message: "Tantang dirimu dengan pertanyaan seru dan raih skor tertinggi!",
+      start_quiz_button: "Mulai Quiz",
+      question_label: "Pertanyaan",
+      result_header: "Hasil Quiz Kamu",
+      retry_text: "Main Lagi",
+      footer_note: "Selamat bermain dan semoga berhasil!"
+    };
+    
+    // ===== STATE =====
+    let uiElements = {};
+    let allUsers = [];
+    let currentUser = null;
+    let currentView = "welcome"; // welcome, register, login, profile, edit-profile, edit-username, quiz-setup, quiz, result, review
+    let selectedDifficulty = "medium";
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let userScore = 0;
+    let userAnswers = [];
+    let showHintModal = false;
+    
+    // ===== QUIZ QUESTIONS =====
+    const questionBank = {
+      easy: [
+        {
+          id: "e1",
+          text: "Berapa hasil dari 10 + 5?",
+          choices: ["12", "15", "20", "25"],
+          correct: 1,
+          hint: "Jumlahkan 10 dengan 5"
+        },
+        {
+          id: "e2",
+          text: "Apa ibu kota Indonesia?",
+          choices: ["Bandung", "Jakarta", "Surabaya", "Medan"],
+          correct: 1,
+          hint: "Kota terbesar di Indonesia"
+        },
+        {
+          id: "e3",
+          text: "Warna daun pada umumnya adalah?",
+          choices: ["Merah", "Hijau", "Biru", "Kuning"],
+          correct: 1,
+          hint: "Warna yang sama dengan rumput"
+        },
+        {
+          id: "e4",
+          text: "Hewan yang bisa terbang adalah?",
+          choices: ["Kucing", "Anjing", "Burung", "Ikan"],
+          correct: 2,
+          hint: "Hewan yang memiliki sayap"
+        },
+        {
+          id: "e5",
+          text: "Berapa jumlah hari dalam seminggu?",
+          choices: ["5", "6", "7", "8"],
+          correct: 2,
+          hint: "Senin sampai Minggu"
+        }
+      ],
+      medium: [
+        {
+          id: "m1",
+          text: "Hasil dari 12 x 8 adalah?",
+          choices: ["84", "96", "104", "112"],
+          correct: 1,
+          hint: "Kalikan 12 dengan 8"
+        },
+        {
+          id: "m2",
+          text: "Planet terbesar di tata surya adalah?",
+          choices: ["Mars", "Bumi", "Jupiter", "Saturnus"],
+          correct: 2,
+          hint: "Planet gas raksasa dengan bintik merah"
+        },
+        {
+          id: "m3",
+          text: "Siapa penemu lampu pijar?",
+          choices: ["Albert Einstein", "Thomas Edison", "Nikola Tesla", "Isaac Newton"],
+          correct: 1,
+          hint: "Penemu Amerika yang terkenal"
+        },
+        {
+          id: "m4",
+          text: "Rumus kimia air adalah?",
+          choices: ["H2O", "CO2", "O2", "NaCl"],
+          correct: 0,
+          hint: "Terdiri dari hidrogen dan oksigen"
+        },
+        {
+          id: "m5",
+          text: "Bahasa pemrograman untuk web adalah?",
+          choices: ["Python", "JavaScript", "C++", "Java"],
+          correct: 1,
+          hint: "Berjalan di browser"
+        },
+        {
+          id: "m6",
+          text: "Tahun kemerdekaan Indonesia?",
+          choices: ["1942", "1945", "1950", "1965"],
+          correct: 1,
+          hint: "17 Agustus tahun ini"
+        }
+      ],
+      hard: [
+        {
+          id: "h1",
+          text: "Hasil dari 156 x 17 adalah?",
+          choices: ["2642", "2652", "2662", "2672"],
+          correct: 1,
+          hint: "Antara 2600-2700"
+        },
+        {
+          id: "h2",
+          text: "Siapa yang menemukan teori relativitas?",
+          choices: ["Isaac Newton", "Albert Einstein", "Stephen Hawking", "Galileo"],
+          correct: 1,
+          hint: "Fisikawan Jerman terkenal"
+        },
+        {
+          id: "h3",
+          text: "Bahasa pemrograman yang dibuat oleh Guido van Rossum?",
+          choices: ["Ruby", "Python", "PHP", "Perl"],
+          correct: 1,
+          hint: "Namanya diambil dari nama ular"
+        },
+        {
+          id: "h4",
+          text: "Jumlah kromosom manusia normal adalah?",
+          choices: ["23", "44", "46", "48"],
+          correct: 2,
+          hint: "23 pasang kromosom"
+        },
+        {
+          id: "h5",
+          text: "Protokol transfer file di internet adalah?",
+          choices: ["HTTP", "FTP", "SMTP", "DNS"],
+          correct: 1,
+          hint: "File Transfer Protocol"
+        },
+        {
+          id: "h6",
+          text: "Satuan gaya dalam SI adalah?",
+          choices: ["Joule", "Watt", "Newton", "Pascal"],
+          correct: 2,
+          hint: "Dinamai dari fisikawan Inggris"
+        },
+        {
+          id: "h7",
+          text: "Kecepatan cahaya dalam vakum adalah?",
+          choices: ["300.000 km/s", "150.000 km/s", "450.000 km/s", "600.000 km/s"],
+          correct: 0,
+          hint: "Sekitar 3 x 10^8 m/s"
+        }
+      ]
+    };
+    
+    // ===== ELEMENT SDK =====
+    async function initElementSdk() {
+      if (!window.elementSdk) return;
+      
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => {
+          const cfg = { ...defaultConfig, ...config };
+          const root = uiElements.root;
+          if (!root) return;
+          
+          const fontStack = `${cfg.font_family}, system-ui, -apple-system, sans-serif`;
+          const baseSize = cfg.font_size;
+          
+          // Colors
+          const bg = cfg.background_color;
+          const surface = cfg.surface_color;
+          const text = cfg.text_color;
+          const primary = cfg.primary_action_color;
+          const secondary = cfg.secondary_action_color;
+          
+          // Apply background
+          root.style.background = `
+            radial-gradient(circle at 20% 30%, ${primary}40, transparent 50%),
+            radial-gradient(circle at 80% 70%, ${secondary}40, transparent 50%),
+            linear-gradient(135deg, ${bg}, #000000)
+          `;
+          
+          // Apply to card
+          if (uiElements.card) {
+            uiElements.card.style.backgroundColor = surface;
+            uiElements.card.style.color = text;
+            uiElements.card.style.borderColor = primary;
+            uiElements.card.style.fontFamily = fontStack;
+          }
+          
+          // Apply to all inputs
+          document.querySelectorAll('input, textarea').forEach(input => {
+            input.style.fontFamily = fontStack;
+            input.style.fontSize = baseSize + 'px';
+            input.style.color = text;
+            input.style.backgroundColor = surface;
+            input.style.borderColor = secondary;
+          });
+          
+          // Apply to all buttons
+          document.querySelectorAll('button').forEach(btn => {
+            btn.style.fontFamily = fontStack;
+            btn.style.fontSize = baseSize + 'px';
+            
+            if (btn.classList.contains('btn-primary')) {
+              btn.style.backgroundColor = primary;
+              btn.style.borderColor = primary;
+              btn.style.color = '#ffffff';
+            } else if (btn.classList.contains('btn-secondary')) {
+              btn.style.backgroundColor = secondary;
+              btn.style.borderColor = secondary;
+              btn.style.color = '#ffffff';
+            } else if (btn.classList.contains('difficulty-active')) {
+              btn.style.backgroundColor = primary;
+              btn.style.borderColor = primary;
+              btn.style.color = '#ffffff';
+            } else {
+              btn.style.color = text;
+              btn.style.borderColor = secondary + '80';
+              btn.style.backgroundColor = 'transparent';
+            }
+          });
+          
+          // Apply to labels
+          document.querySelectorAll('label').forEach(label => {
+            label.style.fontFamily = fontStack;
+            label.style.fontSize = (baseSize * 0.9) + 'px';
+            label.style.color = text;
+          });
+          
+          // Apply to text elements
+          if (uiElements.footer) {
+            uiElements.footer.style.fontFamily = fontStack;
+            uiElements.footer.style.fontSize = (baseSize * 0.85) + 'px';
+            uiElements.footer.style.color = text + 'cc';
+          }
+        },
+        mapToCapabilities: (config) => {
+          const cfg = { ...defaultConfig, ...config };
+          
+          return {
+            recolorables: [
+              {
+                get: () => cfg.background_color,
+                set: (val) => window.elementSdk.setConfig({ background_color: val })
+              },
+              {
+                get: () => cfg.surface_color,
+                set: (val) => window.elementSdk.setConfig({ surface_color: val })
+              },
+              {
+                get: () => cfg.text_color,
+                set: (val) => window.elementSdk.setConfig({ text_color: val })
+              },
+              {
+                get: () => cfg.primary_action_color,
+                set: (val) => window.elementSdk.setConfig({ primary_action_color: val })
+              },
+              {
+                get: () => cfg.secondary_action_color,
+                set: (val) => window.elementSdk.setConfig({ secondary_action_color: val })
+              }
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => cfg.font_family,
+              set: (val) => window.elementSdk.setConfig({ font_family: val })
+            },
+            fontSizeable: {
+              get: () => cfg.font_size,
+              set: (val) => window.elementSdk.setConfig({ font_size: val })
+            }
+          };
+        },
+        mapToEditPanelValues: (config) => {
+          const cfg = { ...defaultConfig, ...config };
+          return new Map([
+            ['app_title', cfg.app_title],
+            ['welcome_message', cfg.welcome_message],
+            ['start_quiz_button', cfg.start_quiz_button],
+            ['question_label', cfg.question_label],
+            ['result_header', cfg.result_header],
+            ['retry_text', cfg.retry_text],
+            ['footer_note', cfg.footer_note]
+          ]);
+        }
+      });
+    }
+    
+    // ===== DATA SDK =====
+    const dataHandler = {
+      onDataChanged(data) {
+        allUsers = data;
+        renderView();
+      }
+    };
+    
+    async function initDataSdk() {
+      if (!window.dataSdk) return;
+      const result = await window.dataSdk.init(dataHandler);
+      if (!result.isOk) {
+        console.error('Data SDK init failed');
+      }
+    }
+    
+    // ===== HELPERS =====
+    function validateUsername(username) {
+      return /^[a-zA-Z0-9_]{3,20}$/.test(username);
+    }
+    
+    function isUsernameTaken(username) {
+      return allUsers.some(u => u.username.toLowerCase() === username.toLowerCase());
+    }
+    
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+    
+    function pickQuestions(difficulty, count) {
+      const pool = questionBank[difficulty] || questionBank.medium;
+      return shuffleArray(pool).slice(0, Math.min(count, pool.length));
+    }
+    
+    function showInlineError(id, message) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = message;
+        el.classList.remove('hidden');
+      }
+    }
+    
+    // ===== ACTIONS =====
+    function changeView(view) {
+      currentView = view;
+      renderView();
+    }
+    
+    function selectDifficulty(level) {
+      selectedDifficulty = level;
+      renderView();
+    }
+    
+    function selectEmoji(el) {
+      document.querySelectorAll('.emoji-selector').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+    }
+    
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showInlineError('reg-error', 'File harus berupa gambar');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const preview = document.getElementById('photo-preview');
+        if (preview) {
+          preview.src = event.target.result;
+          preview.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function handleEditPhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showInlineError('edit-error', 'File harus berupa gambar');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const preview = document.getElementById('edit-photo-preview');
+        if (preview) {
+          preview.src = event.target.result;
+          preview.style.display = 'block';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function togglePassword(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁️';
+      }
+    }
+    
+    function openHint() {
+      showHintModal = true;
+      renderView();
+    }
+    
+    function closeHint() {
+      showHintModal = false;
+      renderView();
+    }
+    
+    async function handleRegister(e) {
+      e.preventDefault();
+      
+      const fullName = document.getElementById('reg-name').value.trim();
+      const username = document.getElementById('reg-username').value.trim();
+      const bio = document.getElementById('reg-bio').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirmPass = document.getElementById('reg-confirm').value;
+      const selectedEmoji = document.querySelector('.emoji-selector.active');
+      const errorEl = document.getElementById('reg-error');
+      
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+      
+      if (!fullName || !username || !password) {
+        showInlineError('reg-error', 'Nama, username, dan password wajib diisi');
+        return;
+      }
+      
+      if (!validateUsername(username)) {
+        showInlineError('reg-error', 'Username harus 3-20 karakter (huruf, angka, underscore)');
+        return;
+      }
+      
+      if (isUsernameTaken(username)) {
+        showInlineError('reg-error', 'Username sudah digunakan');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showInlineError('reg-error', 'Password minimal 6 karakter');
+        return;
+      }
+      
+      if (password !== confirmPass) {
+        showInlineError('reg-error', 'Password tidak cocok');
+        return;
+      }
+      
+      const customEmoji = document.getElementById('reg-custom-emoji').value.trim();
+      const emoji = customEmoji || (selectedEmoji ? selectedEmoji.textContent : '😊');
+      const photoPreview = document.getElementById('photo-preview');
+      const profilePhoto = photoPreview && photoPreview.src && photoPreview.src.startsWith('data:') ? photoPreview.src : '';
+      
+      const btn = document.getElementById('reg-btn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Mendaftar...';
+      btn.disabled = true;
+      
+      const newUser = {
+        username,
+        password,
+        full_name: fullName,
+        bio: bio || '',
+        profile_emoji: emoji,
+        profile_photo: profilePhoto,
+        custom_emoji: customEmoji || '',
+        created_at: new Date().toISOString()
+      };
+      
+      const result = await window.dataSdk.create(newUser);
+      
+      btn.textContent = originalText;
+      btn.disabled = false;
+      
+      if (result.isOk) {
+        currentUser = { ...newUser };
+        changeView('profile');
+      } else {
+        showInlineError('reg-error', 'Gagal mendaftar, coba lagi');
+      }
+    }
+    
+    async function handleLogin(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+      
+      if (!username || !password) {
+        showInlineError('login-error', 'Username dan password wajib diisi');
+        return;
+      }
+      
+      const user = allUsers.find(u => 
+        u.username.toLowerCase() === username.toLowerCase() && u.password === password
+      );
+      
+      if (!user) {
+        showInlineError('login-error', 'Username atau password salah');
+        return;
+      }
+      
+      currentUser = user;
+      changeView('profile');
+    }
+    
+    async function handleEditProfile(e) {
+      e.preventDefault();
+      
+      const fullName = document.getElementById('edit-name').value.trim();
+      const bio = document.getElementById('edit-bio').value.trim();
+      const selectedEmoji = document.querySelector('.emoji-selector.active');
+      const errorEl = document.getElementById('edit-error');
+      
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+      
+      if (!fullName) {
+        showInlineError('edit-error', 'Nama lengkap wajib diisi');
+        return;
+      }
+      
+      const customEmoji = document.getElementById('edit-custom-emoji').value.trim();
+      const emoji = customEmoji || (selectedEmoji ? selectedEmoji.textContent : currentUser.profile_emoji);
+      const photoPreview = document.getElementById('edit-photo-preview');
+      const profilePhoto = photoPreview && photoPreview.src && photoPreview.src.startsWith('data:') ? photoPreview.src : currentUser.profile_photo || '';
+      
+      const btn = document.getElementById('edit-btn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Menyimpan...';
+      btn.disabled = true;
+      
+      const updatedUser = {
+        ...currentUser,
+        full_name: fullName,
+        bio: bio || '',
+        profile_emoji: emoji,
+        profile_photo: profilePhoto,
+        custom_emoji: customEmoji || ''
+      };
+      
+      const result = await window.dataSdk.update(updatedUser);
+      
+      btn.textContent = originalText;
+      btn.disabled = false;
+      
+      if (result.isOk) {
+        currentUser = updatedUser;
+        changeView('profile');
+      } else {
+        showInlineError('edit-error', 'Gagal menyimpan, coba lagi');
+      }
+    }
+    
+    async function handleEditUsername(e) {
+      e.preventDefault();
+      
+      const password = document.getElementById('verify-password').value;
+      const newUsername = document.getElementById('new-username').value.trim();
+      const errorEl = document.getElementById('username-error');
+      
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+      
+      if (!password) {
+        showInlineError('username-error', 'Password wajib diisi untuk verifikasi');
+        return;
+      }
+      
+      if (password !== currentUser.password) {
+        showInlineError('username-error', 'Password salah');
+        return;
+      }
+      
+      if (!newUsername) {
+        showInlineError('username-error', 'Username baru wajib diisi');
+        return;
+      }
+      
+      if (!validateUsername(newUsername)) {
+        showInlineError('username-error', 'Username harus 3-20 karakter (huruf, angka, underscore)');
+        return;
+      }
+      
+      if (newUsername.toLowerCase() === currentUser.username.toLowerCase()) {
+        showInlineError('username-error', 'Username baru sama dengan username lama');
+        return;
+      }
+      
+      if (isUsernameTaken(newUsername)) {
+        showInlineError('username-error', 'Username sudah digunakan');
+        return;
+      }
+      
+      const btn = document.getElementById('username-btn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Menyimpan...';
+      btn.disabled = true;
+      
+      const updatedUser = {
+        ...currentUser,
+        username: newUsername
+      };
+      
+      const result = await window.dataSdk.update(updatedUser);
+      
+      btn.textContent = originalText;
+      btn.disabled = false;
+      
+      if (result.isOk) {
+        currentUser = updatedUser;
+        changeView('profile');
+      } else {
+        showInlineError('username-error', 'Gagal menyimpan, coba lagi');
+      }
+    }
+    
+    function startQuiz() {
+      quizData = shuffleArray(pickQuestions(selectedDifficulty, 5));
+      currentQuestionIndex = 0;
+      userScore = 0;
+      userAnswers = [];
+      changeView('quiz');
+    }
+    
+    function answerQuestion(choiceIndex) {
+      const question = quizData[currentQuestionIndex];
+      if (!question) return;
+      
+      const isCorrect = choiceIndex === question.correct;
+      
+      userAnswers.push({
+        question: question.text,
+        choices: question.choices,
+        userChoice: choiceIndex,
+        correctChoice: question.correct,
+        isCorrect
+      });
+      
+      if (isCorrect) userScore++;
+      
+      const container = document.getElementById('choices-container');
+      const buttons = container.querySelectorAll('button');
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === question.correct) {
+          btn.classList.add('border-green-500');
+          btn.style.borderColor = '#22c55e';
+        }
+        if (idx === choiceIndex && !isCorrect) {
+          btn.classList.add('border-red-500');
+          btn.style.borderColor = '#ef4444';
+        }
+      });
+      
+      setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= quizData.length) {
+          changeView('result');
+        } else {
+          renderView();
+        }
+      }, 1000);
+    }
+    
+    function resetQuiz() {
+      quizData = [];
+      currentQuestionIndex = 0;
+      userScore = 0;
+      userAnswers = [];
+      changeView('quiz-setup');
+    }
+    
+    function showLogoutConfirm() {
+      showHintModal = true;
+      renderView();
+    }
+    
+    function confirmLogout() {
+      const password = document.getElementById('logout-password').value;
+      const errorEl = document.getElementById('logout-error');
+      
+      errorEl.textContent = '';
+      errorEl.classList.add('hidden');
+      
+      if (!password) {
+        showInlineError('logout-error', 'Password wajib diisi untuk logout');
+        return;
+      }
+      
+      if (password !== currentUser.password) {
+        showInlineError('logout-error', 'Password salah');
+        return;
+      }
+      
+      currentUser = null;
+      showHintModal = false;
+      changeView('welcome');
+    }
+    
+    function cancelLogout() {
+      showHintModal = false;
+      renderView();
+    }
+    
+    function getProfileDisplay(user) {
+      if (user.profile_photo) {
+        return `<img src="${user.profile_photo}" alt="Foto profil" class="profile-photo-display" />`;
+      } else {
+        return `<div class="text-6xl">${user.profile_emoji}</div>`;
+      }
+    }
+    
+    // ===== RENDER =====
+    function renderView() {
+      const container = document.getElementById('content');
+      if (!container) return;
+      
+      let html = '';
+      
+      if (currentView === 'welcome') {
+        html = `
+          <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold gradient-text mb-3">${defaultConfig.app_title}</h1>
+            <p class="text-sm opacity-90">${defaultConfig.welcome_message}</p>
+          </header>
+          <div class="space-y-3">
+            <button onclick="changeView('login')" class="btn-primary w-full py-3 px-6 rounded-xl font-semibold border-2 neon-border transition hover:scale-105 focus-ring">
+              Masuk
+            </button>
+            <button onclick="changeView('register')" class="btn-secondary w-full py-3 px-6 rounded-xl font-semibold border-2 neon-border transition hover:scale-105 focus-ring">
+              Daftar Baru
+            </button>
+          </div>
+        `;
+      } else if (currentView === 'register') {
+        html = `
+          <header class="text-center mb-6">
+            <h2 class="text-2xl font-bold gradient-text">Daftar Akun Baru</h2>
+            <p class="text-xs opacity-80 mt-1">Buat akun untuk mulai bermain</p>
+          </header>
+          <form id="register-form" class="space-y-4">
+            <div>
+              <label for="reg-name" class="block text-sm font-medium mb-1">Nama Lengkap *</label>
+              <input id="reg-name" type="text" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="Nama kamu" required />
+            </div>
+            <div>
+              <label for="reg-username" class="block text-sm font-medium mb-1">Username *</label>
+              <input id="reg-username" type="text" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="username_kamu" required />
+              <p class="text-xs opacity-70 mt-1">3-20 karakter, huruf, angka, underscore</p>
+            </div>
+            <div>
+              <label for="reg-bio" class="block text-sm font-medium mb-1">Bio (Opsional)</label>
+              <textarea id="reg-bio" rows="2" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring resize-none" placeholder="Ceritakan tentang dirimu..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Upload Foto Profil</label>
+              <input type="file" id="photo-upload" accept="image/*" class="w-full text-sm" onchange="handlePhotoUpload(event)" />
+              <div class="mt-2 flex justify-center">
+                <img id="photo-preview" style="display:none;" class="profile-photo-preview" alt="Preview foto profil" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Pilih Emoji Profil</label>
+              <div class="flex gap-2 flex-wrap">
+                ${['😊', '😎', '🤓', '🥳', '🚀', '⭐', '🎮', '🎨', '🎵', '🔥'].map((emoji, i) => 
+                  `<span class="emoji-selector text-3xl ${i === 0 ? 'active' : ''}" onclick="selectEmoji(this)">${emoji}</span>`
+                ).join('')}
+              </div>
+            </div>
+            <div>
+              <label for="reg-custom-emoji" class="block text-sm font-medium mb-1">Atau Emoji Custom</label>
+              <input id="reg-custom-emoji" type="text" maxlength="2" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="Contoh: 🌟" />
+            </div>
+            <div>
+              <label for="reg-password" class="block text-sm font-medium mb-1">Password *</label>
+              <div class="relative">
+                <input id="reg-password" type="password" class="w-full px-4 py-2.5 pr-12 rounded-lg border-2 focus-ring" placeholder="Minimal 6 karakter" required />
+                <button type="button" onclick="togglePassword('reg-password', 'reg-pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                  <span id="reg-pass-icon">👁️</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label for="reg-confirm" class="block text-sm font-medium mb-1">Konfirmasi Password *</label>
+              <div class="relative">
+                <input id="reg-confirm" type="password" class="w-full px-4 py-2.5 pr-12 rounded-lg border-2 focus-ring" placeholder="Ketik ulang password" required />
+                <button type="button" onclick="togglePassword('reg-confirm', 'reg-conf-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                  <span id="reg-conf-icon">👁️</span>
+                </button>
+              </div>
+            </div>
+            <p id="reg-error" class="text-xs text-red-400 hidden"></p>
+            <div class="flex gap-2 pt-2">
+              <button type="button" onclick="changeView('welcome')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Batal
+              </button>
+              <button id="reg-btn" type="submit" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                Daftar
+              </button>
+            </div>
+          </form>
+        `;
+      } else if (currentView === 'login') {
+        html = `
+          <header class="text-center mb-6">
+            <h2 class="text-2xl font-bold gradient-text">Masuk</h2>
+            <p class="text-xs opacity-80 mt-1">Masuk ke akunmu</p>
+          </header>
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label for="login-username" class="block text-sm font-medium mb-1">Username</label>
+              <input id="login-username" type="text" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="Username kamu" required />
+            </div>
+            <div>
+              <label for="login-password" class="block text-sm font-medium mb-1">Password</label>
+              <div class="relative">
+                <input id="login-password" type="password" class="w-full px-4 py-2.5 pr-12 rounded-lg border-2 focus-ring" placeholder="Password kamu" required />
+                <button type="button" onclick="togglePassword('login-password', 'login-pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                  <span id="login-pass-icon">👁️</span>
+                </button>
+              </div>
+            </div>
+            <p id="login-error" class="text-xs text-red-400 hidden"></p>
+            <div class="flex gap-2 pt-2">
+              <button type="button" onclick="changeView('welcome')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Batal
+              </button>
+              <button type="submit" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                Masuk
+              </button>
+            </div>
+          </form>
+        `;
+      } else if (currentView === 'profile') {
+        html = `
+          <div class="space-y-5">
+            <div class="flex items-center gap-4">
+              ${getProfileDisplay(currentUser)}
+              <div class="flex-1">
+                <h2 class="text-2xl font-bold">${currentUser.full_name}</h2>
+                <p class="text-sm opacity-80">@${currentUser.username}</p>
+              </div>
+            </div>
+            ${currentUser.bio ? `<p class="text-sm italic opacity-90">"${currentUser.bio}"</p>` : ''}
+            <div class="flex gap-2">
+              <button onclick="changeView('edit-profile')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition hover:scale-105">
+                Edit Profil
+              </button>
+              <button onclick="changeView('quiz-setup')" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition hover:scale-105">
+                ${defaultConfig.start_quiz_button}
+              </button>
+            </div>
+            <button onclick="changeView('edit-username')" class="w-full py-2 px-4 rounded-lg border-2 border-yellow-500/60 text-sm font-medium focus-ring transition hover:bg-yellow-500/20">
+              🔐 Edit Username
+            </button>
+            <button onclick="showLogoutConfirm()" class="w-full py-2 px-4 rounded-lg border-2 border-red-500/60 text-sm font-medium focus-ring transition hover:bg-red-500/20">
+              Keluar
+            </button>
+          </div>
+          ${showHintModal ? `
+            <div class="modal-overlay" onclick="cancelLogout()">
+              <div class="modal-content glass-effect neon-border" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-bold mb-3 text-center">⚠️ Konfirmasi Keluar</h3>
+                <p class="text-sm mb-3 text-center">Masukkan password untuk keluar dari akun</p>
+                <div class="mb-4">
+                  <label for="logout-password" class="block text-sm font-medium mb-1">Password *</label>
+                  <div class="relative">
+                    <input id="logout-password" type="password" class="w-full px-4 py-2.5 pr-12 rounded-lg border-2 focus-ring" placeholder="Masukkan password" />
+                    <button type="button" onclick="togglePassword('logout-password', 'logout-pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                      <span id="logout-pass-icon">👁️</span>
+                    </button>
+                  </div>
+                </div>
+                <p id="logout-error" class="text-xs text-red-400 hidden mb-3"></p>
+                <div class="flex gap-2">
+                  <button onclick="cancelLogout()" class="flex-1 py-2 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                    Batal
+                  </button>
+                  <button onclick="confirmLogout()" class="btn-secondary flex-1 py-2 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                    Ya, Keluar
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        `;
+      } else if (currentView === 'edit-profile') {
+        html = `
+          <header class="text-center mb-6">
+            <h2 class="text-2xl font-bold gradient-text">Edit Profil</h2>
+          </header>
+          <form id="edit-form" class="space-y-4">
+            <div>
+              <label for="edit-name" class="block text-sm font-medium mb-1">Nama Lengkap *</label>
+              <input id="edit-name" type="text" value="${currentUser.full_name}" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" required />
+            </div>
+            <div>
+              <label for="edit-bio" class="block text-sm font-medium mb-1">Bio</label>
+              <textarea id="edit-bio" rows="2" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring resize-none">${currentUser.bio}</textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Upload Foto Profil Baru</label>
+              <input type="file" id="edit-photo-upload" accept="image/*" class="w-full text-sm" onchange="handleEditPhotoUpload(event)" />
+              <div class="mt-2 flex justify-center">
+                ${currentUser.profile_photo 
+                  ? `<img id="edit-photo-preview" src="${currentUser.profile_photo}" class="profile-photo-preview" alt="Preview foto profil" />`
+                  : `<img id="edit-photo-preview" style="display:none;" class="profile-photo-preview" alt="Preview foto profil" />`
+                }
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Pilih Emoji Profil</label>
+              <div class="flex gap-2 flex-wrap">
+                ${['😊', '😎', '🤓', '🥳', '🚀', '⭐', '🎮', '🎨', '����', '🔥'].map(emoji => 
+                  `<span class="emoji-selector text-3xl ${emoji === currentUser.profile_emoji && !currentUser.custom_emoji ? 'active' : ''}" onclick="selectEmoji(this)">${emoji}</span>`
+                ).join('')}
+              </div>
+            </div>
+            <div>
+              <label for="edit-custom-emoji" class="block text-sm font-medium mb-1">Atau Emoji Custom</label>
+              <input id="edit-custom-emoji" type="text" maxlength="2" value="${currentUser.custom_emoji || ''}" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="Contoh: 🌟" />
+            </div>
+            <p id="edit-error" class="text-xs text-red-400 hidden"></p>
+            <div class="flex gap-2 pt-2">
+              <button type="button" onclick="changeView('profile')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Batal
+              </button>
+              <button id="edit-btn" type="submit" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                Simpan
+              </button>
+            </div>
+          </form>
+        `;
+      } else if (currentView === 'edit-username') {
+        html = `
+          <header class="text-center mb-6">
+            <h2 class="text-2xl font-bold gradient-text">🔐 Edit Username</h2>
+            <p class="text-xs opacity-80 mt-1">Verifikasi password untuk mengganti username</p>
+          </header>
+          <form id="username-form" class="space-y-4">
+            <div class="bg-yellow-500/10 border border-yellow-500/40 rounded-lg p-3">
+              <p class="text-xs opacity-90">⚠️ Username saat ini: <span class="font-bold">@${currentUser.username}</span></p>
+            </div>
+            <div>
+              <label for="verify-password" class="block text-sm font-medium mb-1">Password Saat Ini *</label>
+              <div class="relative">
+                <input id="verify-password" type="password" class="w-full px-4 py-2.5 pr-12 rounded-lg border-2 focus-ring" placeholder="Masukkan password untuk verifikasi" required />
+                <button type="button" onclick="togglePassword('verify-password', 'verify-pass-icon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
+                  <span id="verify-pass-icon">👁️</span>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label for="new-username" class="block text-sm font-medium mb-1">Username Baru *</label>
+              <input id="new-username" type="text" class="w-full px-4 py-2.5 rounded-lg border-2 focus-ring" placeholder="username_baru" required />
+              <p class="text-xs opacity-70 mt-1">3-20 karakter, huruf, angka, underscore</p>
+            </div>
+            <p id="username-error" class="text-xs text-red-400 hidden"></p>
+            <div class="flex gap-2 pt-2">
+              <button type="button" onclick="changeView('profile')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Batal
+              </button>
+              <button id="username-btn" type="submit" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                Simpan Username
+              </button>
+            </div>
+          </form>
+        `;
+      } else if (currentView === 'quiz-setup') {
+        html = `
+          <div class="space-y-5">
+            <div class="flex items-center gap-3">
+              ${currentUser.profile_photo 
+                ? `<img src="${currentUser.profile_photo}" alt="Foto profil" class="w-16 h-16 rounded-full object-cover border-2 border-purple-500/60" />`
+                : `<div class="text-4xl">${currentUser.profile_emoji}</div>`
+              }
+              <div>
+                <p class="text-xs opacity-70">Halo,</p>
+                <p class="text-lg font-bold">${currentUser.full_name}</p>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Pilih Tingkat Kesulitan</label>
+              <div class="grid grid-cols-3 gap-2">
+                ${['easy', 'medium', 'hard'].map(level => `
+                  <button type="button" onclick="selectDifficulty('${level}')" class="${selectedDifficulty === level ? 'difficulty-active' : ''} py-2.5 px-3 rounded-lg border-2 text-xs font-semibold focus-ring transition hover:scale-105">
+                    ${level === 'easy' ? '🟢 Mudah' : level === 'medium' ? '🟡 Sedang' : '🔴 Sulit'}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="changeView('profile')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Kembali
+              </button>
+              <button onclick="startQuiz()" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition hover:scale-105">
+                Mulai
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (currentView === 'quiz') {
+        const q = quizData[currentQuestionIndex];
+        html = `
+          <div class="space-y-4">
+            <div class="flex items-center justify-between text-xs flex-wrap gap-2">
+              <div class="px-3 py-1 rounded-full border glass-effect">
+                Soal ${currentQuestionIndex + 1}/${quizData.length}
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="px-3 py-1 rounded-full border glass-effect">
+                  ${selectedDifficulty === 'easy' ? '🟢 Mudah' : selectedDifficulty === 'medium' ? '🟡 Sedang' : '🔴 Sulit'}
+                </div>
+                <div class="px-3 py-1 rounded-full border glass-effect flex items-center gap-1">
+                  ${currentUser.profile_photo 
+                    ? `<img src="${currentUser.profile_photo}" alt="Foto profil" class="w-5 h-5 rounded-full object-cover" />`
+                    : `<span class="text-lg">${currentUser.profile_emoji}</span>`
+                  }
+                  <span class="font-semibold">${currentUser.username}</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold">${defaultConfig.question_label}</h3>
+                <button onclick="openHint()" class="text-xs px-3 py-1 rounded-full border border-yellow-500/60 bg-yellow-500/20 hover:bg-yellow-500/30 transition focus-ring">
+                  💡 Petunjuk
+                </button>
+              </div>
+              <p class="text-base font-medium">${q.text}</p>
+            </div>
+            <div id="choices-container" class="space-y-2">
+              ${q.choices.map((choice, idx) => `
+                <button type="button" onclick="answerQuestion(${idx})" class="w-full text-left px-4 py-3 rounded-lg border-2 transition hover:scale-102 focus-ring flex items-center gap-3">
+                  <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-purple-500 to-pink-500">
+                    ${String.fromCharCode(65 + idx)}
+                  </span>
+                  <span class="flex-1">${choice}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          ${showHintModal ? `
+            <div class="modal-overlay" onclick="closeHint()">
+              <div class="modal-content glass-effect neon-border" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-bold mb-3 text-center">💡 Petunjuk</h3>
+                <p class="text-sm mb-4">${q.hint}</p>
+                <button onclick="closeHint()" class="btn-primary w-full py-2 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring">
+                  Tutup
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        `;
+      } else if (currentView === 'result') {
+        const total = quizData.length;
+        const percentage = Math.round((userScore / total) * 100);
+        const message = userScore === total 
+          ? `Sempurna! Semua jawaban benar, ${currentUser.full_name}!`
+          : userScore >= total / 2
+          ? `Bagus, ${currentUser.full_name}! Kamu sudah cukup baik.`
+          : `Jangan menyerah, ${currentUser.full_name}. Coba lagi!`;
+        
+        html = `
+          <div class="space-y-5">
+            <div class="text-center">
+              ${currentUser.profile_photo 
+                ? `<img src="${currentUser.profile_photo}" alt="Foto profil" class="w-20 h-20 rounded-full object-cover border-4 border-purple-500/60 mx-auto mb-3" />`
+                : `<div class="text-6xl mb-3">${currentUser.profile_emoji}</div>`
+              }
+              <h2 class="text-2xl font-bold gradient-text">${defaultConfig.result_header}</h2>
+            </div>
+            <div class="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl p-6 text-center space-y-2">
+              <p class="text-5xl font-bold">${userScore}/${total}</p>
+              <p class="text-2xl font-semibold">${percentage}%</p>
+              <p class="text-sm opacity-90">${message}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="changeView('review')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                📝 Review
+              </button>
+              <button onclick="resetQuiz()" class="btn-secondary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                ${defaultConfig.retry_text}
+              </button>
+            </div>
+            <button onclick="changeView('profile')" class="w-full py-2 px-4 rounded-lg border-2 text-sm font-medium focus-ring transition">
+              Kembali ke Profil
+            </button>
+          </div>
+        `;
+      } else if (currentView === 'review') {
+        html = `
+          <div class="space-y-4">
+            <header class="text-center">
+              <h2 class="text-2xl font-bold gradient-text">📝 Review Jawaban</h2>
+              <p class="text-xs opacity-80 mt-1">Skor: ${userScore}/${userAnswers.length} (${Math.round((userScore / userAnswers.length) * 100)}%)</p>
+            </header>
+            <div class="scroll-container space-y-3">
+              ${userAnswers.map((ans, idx) => `
+                <div class="rounded-lg border-2 ${ans.isCorrect ? 'border-green-500/60 bg-green-500/10' : 'border-red-500/60 bg-red-500/10'} p-4">
+                  <div class="flex items-start gap-2 mb-2">
+                    <span class="text-xl">${ans.isCorrect ? '✅' : '❌'}</span>
+                    <div class="flex-1">
+                      <p class="font-semibold text-sm mb-2">Soal ${idx + 1}: ${ans.question}</p>
+                      <p class="text-xs opacity-90">
+                        <span class="font-medium">Jawabanmu:</span> ${ans.choices[ans.userChoice]}
+                      </p>
+                      ${!ans.isCorrect ? `
+                        <p class="text-xs opacity-90 mt-1">
+                          <span class="font-medium">Jawaban benar:</span> ${ans.choices[ans.correctChoice]}
+                        </p>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex gap-2">
+              <button onclick="changeView('result')" class="flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold focus-ring transition">
+                Kembali
+              </button>
+              <button onclick="resetQuiz()" class="btn-primary flex-1 py-2.5 px-4 rounded-lg border-2 font-semibold neon-glow focus-ring transition">
+                ${defaultConfig.retry_text}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+      
+      // Attach event listeners
+      if (currentView === 'register') {
+        document.getElementById('register-form').addEventListener('submit', handleRegister);
+      } else if (currentView === 'login') {
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+      } else if (currentView === 'edit-profile') {
+        document.getElementById('edit-form').addEventListener('submit', handleEditProfile);
+      } else if (currentView === 'edit-username') {
+        document.getElementById('username-form').addEventListener('submit', handleEditUsername);
+      }
+      
+      // Trigger config update
+      if (window.elementSdk) {
+        window.elementSdk.setConfig({}).catch(() => {});
+      }
+    }
+    
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', async () => {
+      uiElements = {
+        root: document.getElementById('app-root'),
+        card: document.getElementById('main-card'),
+        footer: document.getElementById('footer-text')
+      };
+      
+      await initDataSdk();
+      await initElementSdk();
+      renderView();
+    });
+  </script>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="w-full h-full">
+  <header class="sr-only">
+   <h1>Daus Quiz Header</h1>
+  </header>
+  <main id="app-root" class="w-full h-full flex items-center justify-center p-4">
+   <section id="main-card" class="glass-effect max-w-xl w-full rounded-2xl border-2 neon-border p-6 sm:p-8 relative overflow-hidden" aria-label="Quiz Application"><!-- Decorative elements -->
+    <div class="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-purple-500/30 blur-3xl pointer-events-none" aria-hidden="true"></div>
+    <div class="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-pink-500/30 blur-3xl pointer-events-none" aria-hidden="true"></div>
+    <div class="relative space-y-6">
+     <div id="content"></div>
+     <footer class="pt-4 border-t border-white/10 text-center">
+      <p class="text-xs opacity-50 italic">by Daus XD</p>
+     </footer>
+    </div>
+   </section>
+  </main>
+  <footer class="sr-only">
+   <p>End of Daus Quiz</p>
+  </footer>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a63af3997cf3707',t:'MTc2NDQzNTg3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
