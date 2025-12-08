@@ -1,0 +1,3092 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <title>Quiz Builder Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script><!-- Canva SDKs -->
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .glow-card {
+      box-shadow:
+        0 0 15px rgba(255, 255, 255, 0.2),
+        0 0 35px rgba(99, 102, 241, 0.45);
+      border-width: 1px;
+      border-style: solid;
+    }
+
+    .glow-button {
+      box-shadow:
+        0 0 8px rgba(248, 250, 252, 0.6),
+        0 0 18px rgba(236, 72, 153, 0.8);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .glow-button-secondary {
+      box-shadow:
+        0 0 6px rgba(248, 250, 252, 0.4),
+        0 0 14px rgba(56, 189, 248, 0.7);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .glow-button:hover,
+    .glow-button-secondary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.07);
+    }
+
+    .glow-button:disabled,
+    .glow-button-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .rainbow-border {
+      position: relative;
+      border-radius: 1rem;
+      padding: 1px;
+      background: linear-gradient(120deg, #6366f1, #ec4899, #22c55e, #f97316, #38bdf8);
+      background-size: 300% 300%;
+      animation: rainbowFlow 8s ease infinite;
+    }
+
+    .rainbow-border-inner {
+      border-radius: 0.95rem;
+      background: rgba(15, 23, 42, 0.92);
+    }
+
+    @keyframes rainbowFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .question-card {
+      border-radius: 0.75rem;
+      border-width: 1px;
+      border-style: solid;
+      box-shadow:
+        0 0 8px rgba(148, 163, 184, 0.5),
+        0 0 20px rgba(56, 189, 248, 0.5);
+    }
+
+    .slot-card {
+      border-radius: 0.75rem;
+      border-width: 1px;
+      border-style: dashed;
+      box-shadow:
+        0 0 6px rgba(94, 234, 212, 0.5),
+        0 0 16px rgba(59, 130, 246, 0.4);
+    }
+
+    .input-glow:focus {
+      outline: none;
+      box-shadow:
+        0 0 0 1px rgba(248, 250, 252, 0.9),
+        0 0 10px rgba(236, 72, 153, 0.8),
+        0 0 18px rgba(56, 189, 248, 0.8);
+    }
+
+    .focus-visible-ring:focus-visible {
+      outline: 2px solid #fbbf24;
+      outline-offset: 3px;
+    }
+
+    .watermark {
+      text-shadow:
+        0 0 5px rgba(248, 250, 252, 0.7),
+        0 0 12px rgba(236, 72, 153, 0.9);
+    }
+
+    .badge-glow {
+      box-shadow:
+        0 0 8px rgba(244, 114, 182, 0.6),
+        0 0 16px rgba(129, 140, 248, 0.7);
+    }
+
+    .emoji-input {
+      font-size: 2rem;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid rgba(56, 189, 248, 0.8);
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      width: 100%;
+    }
+
+    .emoji-input:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.8);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+    }
+
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #ec4899;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success {
+      background: rgba(34, 197, 94, 0.95);
+      border: 1px solid #22c55e;
+    }
+
+    .toast.error {
+      background: rgba(239, 68, 68, 0.95);
+      border: 1px solid #ef4444;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98));
+      border-radius: 1rem;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90%;
+      overflow-y: auto;
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.5);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+
+    .mission-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+    }
+
+    .mission-card.completed {
+      border-color: rgba(34, 197, 94, 0.5);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+
+    .locked-slot {
+      opacity: 0.6;
+      position: relative;
+    }
+
+    .locked-slot::after {
+      content: "🔒";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+    }
+
+    .quiz-item {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-item:hover {
+      border-color: rgba(236, 72, 153, 0.7);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .answer-item {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .answer-item:hover {
+      border-color: rgba(34, 197, 94, 0.7);
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .quiz-card-with-icon {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-card-with-icon:hover {
+      border-color: rgba(236, 72, 153, 0.7);
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .unsaved-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="w-full h-full bg-gradient-to-br from-indigo-900 via-slate-900 to-fuchsia-900 text-slate-50"><!-- Toast Container -->
+  <div id="toast-container"></div><!-- LOGIN PAGE -->
+  <div id="login-page" class="w-full h-full flex items-center justify-center px-4">
+   <div class="rainbow-border max-w-md w-full">
+    <div class="rainbow-border-inner glow-card px-6 py-8">
+     <div class="text-center mb-6">
+      <h1 id="login-title" class="text-3xl font-bold mb-2">Masuk</h1>
+      <p class="text-sm text-slate-300">Masuk ke akun Quiz Builder Anda</p>
+     </div>
+     <form id="login-form" class="space-y-4">
+      <div class="flex flex-col gap-1.5"><label for="login-username" class="text-sm font-medium">Username</label> <input id="login-username" name="username" type="text" required class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm" placeholder="Masukkan username">
+      </div>
+      <div class="flex flex-col gap-1.5"><label for="login-password" class="text-sm font-medium">Password</label>
+       <div class="relative"><input id="login-password" name="password" type="password" required class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10" placeholder="Masukkan password"> <button type="button" id="login-toggle-password" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"> 👁️ </button>
+       </div>
+      </div><button type="submit" id="login-submit-btn" class="glow-button focus-visible-ring w-full rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-3 border border-pink-200/80 flex items-center justify-center gap-2"> <span>Masuk</span> </button>
+     </form>
+     <div class="mt-6 text-center">
+      <p class="text-sm text-slate-300">Belum punya akun? <button id="goto-register-btn" class="text-pink-400 hover:text-pink-300 font-semibold focus-visible-ring rounded px-1"> Daftar di sini </button></p>
+     </div>
+     <div class="mt-6 text-center"><span id="watermark-login" class="text-xs px-3 py-1 rounded-full bg-fuchsia-600/80 border border-fuchsia-200/80 watermark font-semibold"> by Daus XD </span>
+     </div>
+    </div>
+   </div>
+  </div><!-- REGISTER PAGE -->
+  <div id="register-page" class="w-full h-full flex items-center justify-center px-4 hidden overflow-auto py-8">
+   <div class="rainbow-border max-w-md w-full">
+    <div class="rainbow-border-inner glow-card px-6 py-8">
+     <div class="text-center mb-6">
+      <h1 id="register-title" class="text-3xl font-bold mb-2">Daftar Akun</h1>
+      <p class="text-sm text-slate-300">Buat akun Quiz Builder baru</p>
+     </div>
+     <form id="register-form" class="space-y-4">
+      <div class="flex flex-col gap-1.5"><label for="register-fullname" class="text-sm font-medium">Nama Lengkap</label> <input id="register-fullname" name="fullname" type="text" required class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm" placeholder="Contoh: Daus Ramadhan">
+      </div>
+      <div class="flex flex-col gap-1.5"><label for="register-username" class="text-sm font-medium">Username</label> <input id="register-username" name="username" type="text" required pattern="[a-zA-Z0-9_]{3,20}" class="input-glow focus-visible-ring bg-slate-900/70 border border-emerald-400/80 rounded-lg px-3 py-2 text-sm" placeholder="Contoh: daus_xd (3-20 karakter)">
+       <p class="text-xs text-slate-400">Hanya huruf, angka, dan underscore (_)</p>
+      </div>
+      <div class="flex flex-col gap-1.5"><label class="text-sm font-medium">Foto Profil (Emoji)</label>
+       <p class="text-xs text-slate-400 mb-2">Ketik emoji dari keyboard Anda</p><input id="register-emoji-input" type="text" maxlength="2" class="emoji-input" placeholder="😊" value="😊">
+      </div>
+      <div class="flex flex-col gap-1.5"><label for="register-password" class="text-sm font-medium">Password</label>
+       <div class="relative"><input id="register-password" name="password" type="password" required minlength="6" class="input-glow focus-visible-ring bg-slate-900/70 border border-pink-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10" placeholder="Minimal 6 karakter"> <button type="button" id="register-toggle-password" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"> 👁️ </button>
+       </div>
+      </div>
+      <div class="flex flex-col gap-1.5"><label for="register-confirm-password" class="text-sm font-medium">Konfirmasi Password</label>
+       <div class="relative"><input id="register-confirm-password" name="confirm-password" type="password" required minlength="6" class="input-glow focus-visible-ring bg-slate-900/70 border border-pink-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10" placeholder="Ketik ulang password"> <button type="button" id="register-toggle-confirm-password" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"> 👁️ </button>
+       </div>
+      </div><button type="submit" id="register-submit-btn" class="glow-button focus-visible-ring w-full rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-3 border border-pink-200/80 flex items-center justify-center gap-2"> <span>Daftar</span> </button>
+     </form>
+     <div class="mt-6 text-center">
+      <p class="text-sm text-slate-300">Sudah punya akun? <button id="goto-login-btn" class="text-pink-400 hover:text-pink-300 font-semibold focus-visible-ring rounded px-1"> Masuk di sini </button></p>
+     </div>
+     <div class="mt-6 text-center"><span id="watermark-register" class="text-xs px-3 py-1 rounded-full bg-fuchsia-600/80 border border-fuchsia-200/80 watermark font-semibold"> by Daus XD </span>
+     </div>
+    </div>
+   </div>
+  </div><!-- MAIN APP PAGE -->
+  <div id="main-app-page" class="w-full h-full flex flex-col hidden">
+   <header class="w-full py-4 px-4 sm:px-8 border-b border-slate-700/50">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+     <div>
+      <h1 id="main-title" class="text-2xl sm:text-3xl font-bold tracking-tight drop-shadow-lg">Quiz Builder Pro</h1>
+      <p id="subtitle-text" class="text-sm sm:text-base text-slate-200/80 mt-1 max-w-xl">Buat kuis interaktif dengan icon emoji yang menarik</p>
+     </div>
+     <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2 bg-amber-500/90 border border-amber-200/80 rounded-full px-3 py-1.5"><span class="text-lg">💰</span> <span id="balance-display" class="text-sm font-bold">0</span>
+      </div><button id="daily-reward-btn" class="glow-button focus-visible-ring flex items-center gap-2 rounded-full bg-pink-500/90 hover:bg-pink-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-pink-200/80"> <span>🎁</span> <span>Hadiah</span> </button> <button id="missions-btn" class="glow-button focus-visible-ring flex items-center gap-2 rounded-full bg-pink-500/90 hover:bg-pink-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-pink-200/80"> <span>🎯</span> <span>Misi</span> </button> <button id="help-btn" class="glow-button-secondary focus-visible-ring flex items-center gap-2 rounded-full bg-sky-500/90 hover:bg-sky-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-sky-200/80"> <span>❓</span> </button> <button id="profile-btn" class="glow-button-secondary focus-visible-ring flex items-center gap-2 rounded-full bg-sky-500/90 hover:bg-sky-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-sky-200/80"> <span id="header-user-emoji" class="text-lg">😊</span> <span id="header-username">User</span> </button> <button id="logout-btn" class="focus-visible-ring text-xs sm:text-sm px-3 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-500/80"> Keluar </button>
+     </div>
+    </div>
+   </header>
+   <main class="w-full flex-1 px-4 sm:px-8 pb-6 overflow-auto">
+    <div class="max-w-6xl mx-auto mt-6">
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Quiz Settings Card -->
+      <div class="quiz-item" id="quiz-settings-card">
+       <div class="flex items-center gap-3 mb-2">
+        <div class="text-4xl">
+         ⚙️
+        </div>
+        <div>
+         <h3 class="text-lg font-bold">Pengaturan Kuis</h3>
+         <p class="text-xs text-slate-300">Buat &amp; edit kuis baru</p>
+        </div>
+       </div>
+      </div><!-- My Quizzes Card -->
+      <div class="quiz-item" id="my-quizzes-card">
+       <div class="flex items-center gap-3 mb-2">
+        <div class="text-4xl">
+         📚
+        </div>
+        <div>
+         <h3 class="text-lg font-bold">Kuis Saya</h3>
+         <p class="text-xs text-slate-300">Lihat kuis tersimpan</p>
+        </div>
+       </div>
+      </div><!-- Join Quiz Card -->
+      <div class="quiz-item" id="join-quiz-card">
+       <div class="flex items-center gap-3 mb-2">
+        <div class="text-4xl">
+         🔗
+        </div>
+        <div>
+         <h3 class="text-lg font-bold">Join Kuis</h3>
+         <p class="text-xs text-slate-300">Jawab kuis orang lain</p>
+        </div>
+       </div>
+      </div><!-- Quiz Answers Card -->
+      <div class="answer-item" id="quiz-answers-card">
+       <div class="flex items-center gap-3 mb-2">
+        <div class="text-4xl">
+         📝
+        </div>
+        <div>
+         <h3 class="text-lg font-bold">Hasil Jawaban</h3>
+         <p class="text-xs text-slate-300">Lihat jawaban pengguna</p>
+        </div>
+       </div>
+      </div><!-- Slots Card -->
+      <div class="quiz-item" id="slots-card">
+       <div class="flex items-center gap-3 mb-2">
+        <div class="text-4xl">
+         💾
+        </div>
+        <div>
+         <h3 class="text-lg font-bold">Slot Penyimpanan</h3>
+         <p class="text-xs text-slate-300">Kelola 5 slot kuis</p>
+        </div>
+       </div>
+      </div>
+     </div>
+     <footer class="mt-6 rounded-2xl bg-slate-900/70 border border-fuchsia-400/60 px-4 sm:px-5 py-3 sm:py-4">
+      <div class="flex items-center justify-center"><span id="watermark-main" class="text-xs px-3 py-1 rounded-full bg-fuchsia-600/80 border border-fuchsia-200/80 watermark font-semibold"> by Daus XD </span>
+      </div>
+     </footer>
+    </div>
+   </main>
+  </div>
+  <script>
+    // ========================
+    // CONFIG & STATE
+    // ========================
+    const defaultConfig = {
+      main_title: "Quiz Builder Pro",
+      subtitle: "Buat kuis interaktif dengan icon emoji yang menarik",
+      login_title: "Masuk",
+      register_title: "Daftar Akun",
+      profile_title: "Profil Saya",
+      quiz_title_label: "Judul Kuis",
+      watermark_text: "by Daus XD",
+      
+      background_color: "#020617",
+      surface_color: "#020617",
+      text_color: "#E5E7EB",
+      primary_action_color: "#EC4899",
+      secondary_action_color: "#0EA5E9",
+      font_family: "system-ui",
+      font_size: 14
+    };
+
+    let allUsers = [];
+    let currentUser = null;
+    let currentQuestions = [];
+    let currentQuizMeta = { title: "", creator: "", desc: "", icon: "📝" };
+    const MAX_SLOTS = 5;
+    const slotsData = new Array(MAX_SLOTS).fill(null);
+    const slotNames = new Array(MAX_SLOTS).fill(null);
+    const SLOT_PRICES = [0, 75, 125, 200, 400];
+    let autoSaveTimeout = null;
+    let hasUnsavedChanges = false;
+    let currentQuizSettingsModal = null;
+
+    const DAILY_MISSIONS = [
+      { id: "create_quiz", name: "Buat 1 Kuis", reward: 100, desc: "Buat dan simpan 1 kuis" },
+      { id: "create_5_questions", name: "Buat 5 Pertanyaan", reward: 75, desc: "Tambahkan 5 pertanyaan ke kuis" },
+      { id: "answer_quiz", name: "Jawab 1 Kuis", reward: 50, desc: "Jawab kuis dari pengguna lain" }
+    ];
+
+    // ========================
+    // LOCAL STORAGE FOR SESSION
+    // ========================
+    function saveSession(userId) {
+      localStorage.setItem("quizBuilderSession", userId);
+    }
+
+    function getSession() {
+      return localStorage.getItem("quizBuilderSession");
+    }
+
+    function clearSession() {
+      localStorage.removeItem("quizBuilderSession");
+    }
+
+    // ========================
+    // UTILITY FUNCTIONS
+    // ========================
+    function generateId() {
+      return "id_" + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    }
+
+    function generateQuizCode() {
+      return "QZ" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    function showToast(message, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = "toast " + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    function showLoading(button) {
+      const spinner = document.createElement("div");
+      spinner.className = "spinner";
+      button.disabled = true;
+      const originalContent = button.innerHTML;
+      button.innerHTML = "";
+      button.appendChild(spinner);
+      return originalContent;
+    }
+
+    function hideLoading(button, originalContent) {
+      button.disabled = false;
+      button.innerHTML = originalContent;
+    }
+
+    function showPage(pageId) {
+      const pages = ["login-page", "register-page", "main-app-page"];
+      pages.forEach(id => {
+        const page = document.getElementById(id);
+        if (page) {
+          page.classList.toggle("hidden", id !== pageId);
+        }
+      });
+    }
+
+    function showModal(content, preventClose = false) {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.innerHTML = `<div class="modal-content">${content}</div>`;
+      
+      if (!preventClose) {
+        const closeBtn = overlay.querySelector(".modal-close-btn");
+        if (closeBtn) {
+          closeBtn.addEventListener("click", () => overlay.remove());
+        }
+      }
+      
+      document.body.appendChild(overlay);
+      return overlay;
+    }
+
+    // ========================
+    // DATA SDK HANDLER
+    // ========================
+    const dataHandler = {
+      onDataChanged(data) {
+        allUsers = data || [];
+        
+        if (currentUser && currentUser.__backendId) {
+          const updated = allUsers.find(u => u.__backendId === currentUser.__backendId);
+          if (updated) {
+            currentUser = updated;
+            updateHeaderUserInfo();
+            updateBalanceDisplay();
+            loadUserData();
+          }
+        }
+      }
+    };
+
+    // ========================
+    // AUTH FUNCTIONS
+    // ========================
+    async function handleRegister(e) {
+      e.preventDefault();
+      
+      const fullName = document.getElementById("register-fullname").value.trim();
+      const username = document.getElementById("register-username").value.trim();
+      const password = document.getElementById("register-password").value;
+      const confirmPassword = document.getElementById("register-confirm-password").value;
+      const emoji = document.getElementById("register-emoji-input").value.trim() || "😊";
+      
+      if (password !== confirmPassword) {
+        showToast("Password dan konfirmasi password tidak cocok!", "error");
+        return;
+      }
+      
+      const existingUser = allUsers.find(u => u.username === username);
+      if (existingUser) {
+        showToast("Username sudah digunakan!", "error");
+        return;
+      }
+
+      if (allUsers.length >= 999) {
+        showToast("Maksimal 999 pengguna telah tercapai!", "error");
+        return;
+      }
+      
+      const submitBtn = document.getElementById("register-submit-btn");
+      const originalContent = showLoading(submitBtn);
+      
+      const newUser = {
+        id: generateId(),
+        username: username,
+        fullName: fullName,
+        password: password,
+        emoji: emoji,
+        createdAt: new Date().toISOString(),
+        quizzes: JSON.stringify([]),
+        balance: 0,
+        unlockedSlots: JSON.stringify([0]),
+        lastDailyReward: "",
+        slotNames: JSON.stringify(["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5"]),
+        publishedQuizzes: JSON.stringify([]),
+        quizAnswers: JSON.stringify([])
+      };
+      
+      const result = await window.dataSdk.create(newUser);
+      
+      hideLoading(submitBtn, originalContent);
+      
+      if (result.isOk) {
+        showToast("Akun berhasil dibuat! Silakan login.", "success");
+        document.getElementById("register-form").reset();
+        document.getElementById("register-emoji-input").value = "😊";
+        showPage("login-page");
+      } else {
+        showToast("Gagal membuat akun. Coba lagi.", "error");
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value;
+      
+      const user = allUsers.find(u => u.username === username && u.password === password);
+      
+      if (!user) {
+        showToast("Username atau password salah!", "error");
+        return;
+      }
+      
+      currentUser = user;
+      saveSession(user.id);
+      loadUserData();
+      
+      updateHeaderUserInfo();
+      updateBalanceDisplay();
+      showToast("Selamat datang, " + user.fullName + "!", "success");
+      showPage("main-app-page");
+    }
+
+    async function autoLogin() {
+      const sessionId = getSession();
+      if (!sessionId) return false;
+      
+      let attempts = 0;
+      while (allUsers.length === 0 && attempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      
+      const user = allUsers.find(u => u.id === sessionId);
+      if (!user) {
+        clearSession();
+        return false;
+      }
+      
+      currentUser = user;
+      loadUserData();
+      updateHeaderUserInfo();
+      updateBalanceDisplay();
+      showPage("main-app-page");
+      return true;
+    }
+
+    function loadUserData() {
+      if (!currentUser) return;
+      
+      try {
+        const savedQuizzes = JSON.parse(currentUser.quizzes || "[]");
+        if (Array.isArray(savedQuizzes) && savedQuizzes.length > 0) {
+          for (let i = 0; i < Math.min(savedQuizzes.length, MAX_SLOTS); i++) {
+            slotsData[i] = savedQuizzes[i];
+          }
+        }
+        
+        const savedSlotNames = JSON.parse(currentUser.slotNames || "[]");
+        if (Array.isArray(savedSlotNames) && savedSlotNames.length > 0) {
+          for (let i = 0; i < Math.min(savedSlotNames.length, MAX_SLOTS); i++) {
+            slotNames[i] = savedSlotNames[i];
+          }
+        } else {
+          for (let i = 0; i < MAX_SLOTS; i++) {
+            slotNames[i] = "Slot " + (i + 1);
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
+
+    function handleLogout() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">🔒 Konfirmasi Logout</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-4">Masukkan password Anda untuk konfirmasi logout.</p>
+          
+          <form id="logout-confirm-form" class="space-y-4">
+            <div class="flex flex-col gap-1.5">
+              <label for="logout-password" class="text-sm font-medium">Password</label>
+              <div class="relative">
+                <input
+                  id="logout-password"
+                  type="password"
+                  required
+                  class="input-glow focus-visible-ring bg-slate-900/70 border border-pink-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10"
+                  placeholder="Masukkan password"
+                />
+                <button
+                  type="button"
+                  id="logout-toggle-password"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex gap-2">
+              <button
+                type="submit"
+                id="logout-confirm-btn"
+                class="glow-button focus-visible-ring flex-1 rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-2 border border-pink-200/80"
+              >
+                Logout
+              </button>
+              <button
+                type="button"
+                class="modal-close-btn focus-visible-ring flex-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 text-sm font-semibold px-4 py-2 border border-slate-500/80"
+              >
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const toggleBtn = modal.querySelector("#logout-toggle-password");
+      const passwordInput = modal.querySelector("#logout-password");
+      
+      toggleBtn.addEventListener("click", () => {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+      });
+      
+      const form = modal.querySelector("#logout-confirm-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        const password = passwordInput.value;
+        
+        if (password !== currentUser.password) {
+          showToast("Password salah!", "error");
+          return;
+        }
+        
+        clearSession();
+        currentUser = null;
+        currentQuestions = [];
+        currentQuizMeta = { title: "", creator: "", desc: "", icon: "📝" };
+        slotsData.fill(null);
+        slotNames.fill(null);
+        hasUnsavedChanges = false;
+        
+        document.getElementById("login-form").reset();
+        
+        modal.remove();
+        showToast("Anda telah keluar.", "success");
+        showPage("login-page");
+      });
+    }
+
+    function updateHeaderUserInfo() {
+      if (!currentUser) return;
+      
+      const emojiEl = document.getElementById("header-user-emoji");
+      const usernameEl = document.getElementById("header-username");
+      
+      if (emojiEl) emojiEl.textContent = currentUser.emoji || "😊";
+      if (usernameEl) usernameEl.textContent = currentUser.username || "User";
+    }
+
+    function updateBalanceDisplay() {
+      const balanceEl = document.getElementById("balance-display");
+      if (balanceEl && currentUser) {
+        balanceEl.textContent = currentUser.balance || 0;
+      }
+    }
+
+    async function addBalance(amount) {
+      if (!currentUser || !currentUser.__backendId) return;
+      
+      const updatedUser = {
+        ...currentUser,
+        balance: (currentUser.balance || 0) + amount
+      };
+      
+      const result = await window.dataSdk.update(updatedUser);
+      if (result.isOk) {
+        currentUser = updatedUser;
+        updateBalanceDisplay();
+      }
+    }
+
+    async function deductBalance(amount) {
+      if (!currentUser || !currentUser.__backendId) return false;
+      
+      if ((currentUser.balance || 0) < amount) {
+        showToast("Saldo tidak cukup!", "error");
+        return false;
+      }
+      
+      const updatedUser = {
+        ...currentUser,
+        balance: (currentUser.balance || 0) - amount
+      };
+      
+      const result = await window.dataSdk.update(updatedUser);
+      if (result.isOk) {
+        currentUser = updatedUser;
+        updateBalanceDisplay();
+        return true;
+      }
+      return false;
+    }
+
+    // ========================
+    // DAILY REWARD
+    // ========================
+    async function claimDailyReward() {
+      if (!currentUser || !currentUser.__backendId) return;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const lastReward = currentUser.lastDailyReward || "";
+      
+      if (lastReward === today) {
+        showToast("Hadiah harian sudah diambil hari ini!", "error");
+        return;
+      }
+      
+      await addBalance(25);
+      
+      const updatedUser = {
+        ...currentUser,
+        lastDailyReward: today
+      };
+      
+      const result = await window.dataSdk.update(updatedUser);
+      if (result.isOk) {
+        currentUser = updatedUser;
+        showToast("Hadiah harian +25 saldo berhasil diklaim!", "success");
+      }
+    }
+
+    // ========================
+    // MISSIONS
+    // ========================
+    async function checkMission(missionId) {
+      if (!currentUser || !currentUser.__backendId) return;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const lastMission = currentUser.lastDailyReward || "";
+      const missionKey = missionId + ":" + today;
+      
+      if (lastMission.includes(missionKey)) return;
+      
+      const mission = DAILY_MISSIONS.find(m => m.id === missionId);
+      if (!mission) return;
+      
+      let shouldReward = false;
+      
+      if (missionId === "create_quiz") {
+        shouldReward = true;
+      } else if (missionId === "create_5_questions") {
+        if (currentQuestions.length >= 5) {
+          shouldReward = true;
+        }
+      } else if (missionId === "answer_quiz") {
+        shouldReward = true;
+      }
+      
+      if (shouldReward) {
+        await addBalance(mission.reward);
+        
+        const updatedMissions = lastMission + (lastMission ? "," : "") + missionKey;
+        const updatedUser = {
+          ...currentUser,
+          lastDailyReward: updatedMissions
+        };
+        
+        const result = await window.dataSdk.update(updatedUser);
+        if (result.isOk) {
+          currentUser = updatedUser;
+          showToast(`Misi "${mission.name}" selesai! +${mission.reward} saldo`, "success");
+        }
+      }
+    }
+
+    function showMissionsModal() {
+      const today = new Date().toISOString().split('T')[0];
+      const lastMission = currentUser.lastDailyReward || "";
+      
+      let content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">🎯 Misi Harian</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          <p class="text-sm text-slate-300 mb-4">Selesaikan misi untuk mendapatkan saldo!</p>
+          <div class="space-y-3">
+      `;
+      
+      DAILY_MISSIONS.forEach(mission => {
+        const missionKey = mission.id + ":" + today;
+        const isCompleted = lastMission.includes(missionKey);
+        
+        content += `
+          <div class="mission-card ${isCompleted ? 'completed' : ''}">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold">${mission.name}</h3>
+                <p class="text-xs text-slate-300">${mission.desc}</p>
+              </div>
+              <div class="text-right">
+                <div class="text-amber-400 font-bold">+${mission.reward} 💰</div>
+                <div class="text-xs ${isCompleted ? 'text-green-400' : 'text-slate-400'}">
+                  ${isCompleted ? '✓ Selesai' : 'Belum selesai'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      content += `
+          </div>
+        </div>
+      `;
+      
+      showModal(content);
+    }
+
+    // ========================
+    // HELP MODAL
+    // ========================
+    function showHelpModal() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">❓ Petunjuk</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <div class="space-y-4 text-sm">
+            <div>
+              <h3 class="font-bold text-lg mb-2">🎨 Icon Emoji Kuis</h3>
+              <p class="text-slate-300">Setiap kuis bisa memiliki icon emoji unik! Pilih emoji favorit Anda dari keyboard HP/Desktop untuk membuat kuis lebih menarik dan mudah dikenali.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-lg mb-2">🗑️ Hapus Quiz Permanen</h3>
+              <p class="text-slate-300">Anda bisa menghapus quiz yang sudah dipublikasikan dengan verifikasi password. Klik "Kuis Saya", pilih quiz, lalu klik tombol hapus.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-lg mb-2">✅ Validasi Publish</h3>
+              <p class="text-slate-300">Sebelum publish, pastikan semua pertanyaan sudah diisi lengkap. Sistem akan otomatis mengecek kelengkapan data.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-lg mb-2">⚠️ Konfirmasi Keluar</h3>
+              <p class="text-slate-300">Saat keluar dari pengaturan quiz, semua perubahan yang belum disimpan akan hilang. Sistem akan menampilkan konfirmasi terlebih dahulu.</p>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-lg mb-2">🎁 Hadiah Harian</h3>
+              <p class="text-slate-300">Klaim hadiah harian +25 saldo setiap hari! Klik tombol "Hadiah" di header.</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">💰 Sistem Saldo</h3>
+              <p class="text-slate-300">Saldo digunakan untuk membuka slot penyimpanan tambahan. Dapatkan saldo dari hadiah harian dan misi!</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">💾 Slot Penyimpanan</h3>
+              <ul class="list-disc list-inside text-slate-300 space-y-1">
+                <li>Slot 1: Gratis (sudah terbuka)</li>
+                <li>Slot 2: 75 saldo</li>
+                <li>Slot 3: 125 saldo</li>
+                <li>Slot 4: 200 saldo</li>
+                <li>Slot 5: 400 saldo</li>
+              </ul>
+              <p class="text-slate-300 mt-2">Klik "Beli Slot" untuk membuka slot yang terkunci.</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">📝 Membuat Kuis</h3>
+              <ol class="list-decimal list-inside text-slate-300 space-y-1">
+                <li>Buka "Pengaturan Kuis"</li>
+                <li>Pilih icon emoji untuk kuis Anda</li>
+                <li>Isi judul dan deskripsi kuis</li>
+                <li>Tambahkan pertanyaan (Pilihan Ganda atau Esai)</li>
+                <li>Kuis otomatis tersimpan di slot pertama</li>
+                <li>Klik "Publish Kuis" untuk membagikan</li>
+              </ol>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">🔗 Join & Jawab Kuis</h3>
+              <p class="text-slate-300">Masukkan kode kuis yang dibagikan pembuat untuk melihat dan menjawab pertanyaan kuis tersebut.</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">📝 Hasil Jawaban</h3>
+              <p class="text-slate-300">Lihat semua jawaban yang dikirim oleh pengguna lain untuk kuis Anda, lengkap dengan profil penjawab.</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold text-lg mb-2">🎯 Misi Harian</h3>
+              <p class="text-slate-300">Selesaikan misi setiap hari untuk mendapatkan saldo. Misi direset setiap hari!</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      showModal(content);
+    }
+
+    // ========================
+    // PROFILE MODAL
+    // ========================
+    function showProfileModal() {
+      if (!currentUser) return;
+      
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 id="profile-title" class="text-2xl font-bold">Profil Saya</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+
+          <div class="flex flex-col items-center mb-6">
+            <div id="profile-emoji-display" class="text-8xl mb-3">${currentUser.emoji || "😊"}</div>
+            <h2 id="profile-fullname-display" class="text-2xl font-bold mb-1">${currentUser.fullName || "Nama Lengkap"}</h2>
+            <p id="profile-username-display" class="text-lg text-slate-300 mb-3">@${currentUser.username || "username"}</p>
+            
+            <div class="flex items-center gap-2 bg-slate-900/70 border border-sky-400/80 rounded-lg px-4 py-2">
+              <span class="text-xs text-slate-300">ID Profil:</span>
+              <code id="profile-id-display" class="text-sm font-mono text-pink-300">${currentUser.id || "N/A"}</code>
+              <button
+                id="copy-id-btn"
+                class="focus-visible-ring text-xs px-2 py-1 rounded bg-pink-500/90 hover:bg-pink-400 border border-pink-200/80"
+              >
+                Salin
+              </button>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-600/60 pt-6">
+            <h3 class="text-xl font-semibold mb-4">Edit Profil</h3>
+            
+            <form id="edit-profile-form" class="space-y-4">
+              <div class="flex flex-col gap-1.5">
+                <label for="edit-fullname" class="text-sm font-medium">Nama Lengkap</label>
+                <input
+                  id="edit-fullname"
+                  type="text"
+                  required
+                  value="${currentUser.fullName || ""}"
+                  class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label for="edit-username" class="text-sm font-medium">Username</label>
+                <input
+                  id="edit-username"
+                  type="text"
+                  required
+                  pattern="[a-zA-Z0-9_]{3,20}"
+                  value="${currentUser.username || ""}"
+                  class="input-glow focus-visible-ring bg-slate-900/70 border border-emerald-400/80 rounded-lg px-3 py-2 text-sm"
+                />
+                <p class="text-xs text-slate-400">Hanya huruf, angka, dan underscore (_)</p>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-sm font-medium">Foto Profil (Emoji)</label>
+                <p class="text-xs text-slate-400 mb-2">Ketik emoji dari keyboard Anda</p>
+                <input
+                  id="edit-emoji-input"
+                  type="text"
+                  maxlength="2"
+                  class="emoji-input"
+                  value="${currentUser.emoji || "😊"}"
+                />
+              </div>
+
+              <button
+                type="submit"
+                id="save-profile-btn"
+                class="glow-button focus-visible-ring w-full rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-3 border border-pink-200/80 flex items-center justify-center gap-2"
+              >
+                <span>Simpan Perubahan</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="border-t border-slate-600/60 pt-6 mt-6">
+            <h3 class="text-xl font-semibold mb-2 text-red-400">Zona Bahaya</h3>
+            <p class="text-xs text-slate-400 mb-4">Tindakan ini tidak dapat dibatalkan!</p>
+            
+            <button
+              id="delete-profile-btn"
+              class="focus-visible-ring w-full rounded-full bg-red-600/90 hover:bg-red-500/90 text-sm font-semibold px-4 py-3 border border-red-200/80 flex items-center justify-center gap-2"
+            >
+              <span>🗑️</span>
+              <span>Hapus Profil Permanen</span>
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const copyBtn = modal.querySelector("#copy-id-btn");
+      copyBtn.addEventListener("click", () => {
+        const idText = currentUser.id;
+        const tempInput = document.createElement("input");
+        tempInput.value = idText;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        showToast("ID berhasil disalin!", "success");
+      });
+      
+      const editForm = modal.querySelector("#edit-profile-form");
+      editForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser || !currentUser.__backendId) {
+          showToast("User tidak ditemukan!", "error");
+          return;
+        }
+        
+        const newFullName = modal.querySelector("#edit-fullname").value.trim();
+        const newUsername = modal.querySelector("#edit-username").value.trim();
+        const newEmoji = modal.querySelector("#edit-emoji-input").value.trim() || "😊";
+        
+        const existingUser = allUsers.find(u => u.username === newUsername && u.__backendId !== currentUser.__backendId);
+        if (existingUser) {
+          showToast("Username sudah digunakan oleh pengguna lain!", "error");
+          return;
+        }
+        
+        const submitBtn = modal.querySelector("#save-profile-btn");
+        const originalContent = showLoading(submitBtn);
+        
+        const updatedUser = {
+          ...currentUser,
+          fullName: newFullName,
+          username: newUsername,
+          emoji: newEmoji
+        };
+        
+        const result = await window.dataSdk.update(updatedUser);
+        
+        hideLoading(submitBtn, originalContent);
+        
+        if (result.isOk) {
+          showToast("Profil berhasil diperbarui!", "success");
+          currentUser = updatedUser;
+          updateHeaderUserInfo();
+          modal.remove();
+        } else {
+          showToast("Gagal memperbarui profil. Coba lagi.", "error");
+        }
+      });
+      
+      const deleteBtn = modal.querySelector("#delete-profile-btn");
+      deleteBtn.addEventListener("click", () => {
+        showDeleteProfileConfirmation();
+      });
+    }
+
+    function showDeleteProfileConfirmation() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-red-400">⚠️ Hapus Profil Permanen</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <div class="bg-red-900/30 border border-red-400/50 rounded-lg p-4 mb-4">
+            <p class="text-sm text-red-200 font-semibold mb-2">PERINGATAN!</p>
+            <ul class="text-xs text-red-200 space-y-1 list-disc list-inside">
+              <li>Semua data Anda akan dihapus permanen</li>
+              <li>Semua kuis yang Anda buat akan hilang</li>
+              <li>Tindakan ini TIDAK DAPAT dibatalkan</li>
+            </ul>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-4">Masukkan password Anda untuk konfirmasi penghapusan profil.</p>
+          
+          <form id="delete-profile-form" class="space-y-4">
+            <div class="flex flex-col gap-1.5">
+              <label for="delete-password" class="text-sm font-medium">Password</label>
+              <div class="relative">
+                <input
+                  id="delete-password"
+                  type="password"
+                  required
+                  class="input-glow focus-visible-ring bg-slate-900/70 border border-red-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10"
+                  placeholder="Masukkan password"
+                />
+                <button
+                  type="button"
+                  id="delete-toggle-password"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex flex-col gap-1.5">
+              <label for="delete-confirmation" class="text-sm font-medium">Ketik "HAPUS" untuk konfirmasi</label>
+              <input
+                id="delete-confirmation"
+                type="text"
+                required
+                class="input-glow focus-visible-ring bg-slate-900/70 border border-red-400/80 rounded-lg px-3 py-2 text-sm"
+                placeholder="Ketik HAPUS"
+              />
+            </div>
+            
+            <div class="flex gap-2">
+              <button
+                type="submit"
+                id="delete-confirm-btn"
+                class="focus-visible-ring flex-1 rounded-full bg-red-600/90 hover:bg-red-500/90 text-sm font-semibold px-4 py-2 border border-red-200/80"
+              >
+                Hapus Profil
+              </button>
+              <button
+                type="button"
+                class="modal-close-btn focus-visible-ring flex-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 text-sm font-semibold px-4 py-2 border border-slate-500/80"
+              >
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const toggleBtn = modal.querySelector("#delete-toggle-password");
+      const passwordInput = modal.querySelector("#delete-password");
+      
+      toggleBtn.addEventListener("click", () => {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+      });
+      
+      const form = modal.querySelector("#delete-profile-form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser || !currentUser.__backendId) {
+          showToast("User tidak ditemukan!", "error");
+          return;
+        }
+        
+        const password = passwordInput.value;
+        const confirmation = modal.querySelector("#delete-confirmation").value;
+        
+        if (password !== currentUser.password) {
+          showToast("Password salah!", "error");
+          return;
+        }
+        
+        if (confirmation !== "HAPUS") {
+          showToast("Ketik HAPUS untuk konfirmasi!", "error");
+          return;
+        }
+        
+        const submitBtn = modal.querySelector("#delete-confirm-btn");
+        const originalContent = showLoading(submitBtn);
+        
+        const result = await window.dataSdk.delete(currentUser);
+        
+        hideLoading(submitBtn, originalContent);
+        
+        if (result.isOk) {
+          clearSession();
+          currentUser = null;
+          currentQuestions = [];
+          currentQuizMeta = { title: "", creator: "", desc: "", icon: "📝" };
+          slotsData.fill(null);
+          slotNames.fill(null);
+          hasUnsavedChanges = false;
+          
+          document.getElementById("login-form").reset();
+          
+          modal.remove();
+          showToast("Profil berhasil dihapus.", "success");
+          showPage("login-page");
+        } else {
+          showToast("Gagal menghapus profil. Coba lagi.", "error");
+        }
+      });
+    }
+
+    // ========================
+    // AUTO SAVE
+    // ========================
+    async function autoSaveQuiz() {
+      if (!currentUser || !currentUser.__backendId) return;
+      
+      let targetSlot = -1;
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        if (isSlotUnlocked(i)) {
+          targetSlot = i;
+          break;
+        }
+      }
+      
+      if (targetSlot === -1) return;
+      
+      const snapshot = {
+        name: currentQuizMeta.title || "Kuis tanpa judul",
+        icon: currentQuizMeta.icon || "📝",
+        savedAt: Date.now(),
+        meta: JSON.parse(JSON.stringify(currentQuizMeta)),
+        questions: JSON.parse(JSON.stringify(currentQuestions))
+      };
+      slotsData[targetSlot] = snapshot;
+      
+      const updatedUser = {
+        ...currentUser,
+        quizzes: JSON.stringify(slotsData.filter(s => s !== null)),
+        slotNames: JSON.stringify(slotNames)
+      };
+      
+      await window.dataSdk.update(updatedUser);
+    }
+
+    function triggerAutoSave() {
+      hasUnsavedChanges = true;
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      autoSaveTimeout = setTimeout(() => {
+        autoSaveQuiz();
+      }, 1000);
+    }
+
+    // ========================
+    // QUIZ VALIDATION
+    // ========================
+    function validateQuizForPublish() {
+      if (currentQuestions.length === 0) {
+        return { valid: false, message: "Tambahkan minimal 1 pertanyaan!" };
+      }
+      
+      if (!currentQuizMeta.title.trim()) {
+        return { valid: false, message: "Judul kuis tidak boleh kosong!" };
+      }
+      
+      for (let i = 0; i < currentQuestions.length; i++) {
+        const q = currentQuestions[i];
+        
+        if (!q.prompt || !q.prompt.trim()) {
+          return { valid: false, message: `Pertanyaan ${i + 1}: Teks pertanyaan belum diisi!` };
+        }
+        
+        if (q.type === "mcq") {
+          if (!q.options || q.options.length < 2) {
+            return { valid: false, message: `Pertanyaan ${i + 1}: Minimal 2 opsi jawaban diperlukan!` };
+          }
+          
+          let hasCorrectAnswer = false;
+          let allOptionsFilled = true;
+          
+          for (let j = 0; j < q.options.length; j++) {
+            if (!q.options[j].text || !q.options[j].text.trim()) {
+              allOptionsFilled = false;
+              break;
+            }
+            if (q.options[j].isCorrect) {
+              hasCorrectAnswer = true;
+            }
+          }
+          
+          if (!allOptionsFilled) {
+            return { valid: false, message: `Pertanyaan ${i + 1}: Semua opsi jawaban harus diisi!` };
+          }
+          
+          if (!hasCorrectAnswer) {
+            return { valid: false, message: `Pertanyaan ${i + 1}: Pilih jawaban yang benar!` };
+          }
+        }
+      }
+      
+      return { valid: true };
+    }
+
+    // ========================
+    // QUIZ SETTINGS MODAL
+    // ========================
+    function showQuizSettingsModal() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">⚙️ Pengaturan Kuis</h2>
+            <button class="modal-close-btn-custom text-2xl hover:text-pink-400">×</button>
+          </div>
+
+          <form id="quiz-meta-form-modal" class="space-y-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium">Icon Kuis (Emoji)</label>
+              <p class="text-xs text-slate-400 mb-2">Ketik emoji dari keyboard Anda</p>
+              <input
+                id="quiz-icon-modal"
+                type="text"
+                maxlength="2"
+                class="emoji-input"
+                placeholder="📝"
+                value="${currentQuizMeta.icon || "📝"}"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="quiz-title-modal" class="text-sm font-medium">Judul Kuis</label>
+              <input
+                id="quiz-title-modal"
+                type="text"
+                class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm"
+                placeholder="Contoh: Latihan Matematika"
+                value="${currentQuizMeta.title || ""}"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="creator-name-modal" class="text-sm font-medium">Nama Pembuat</label>
+              <input
+                id="creator-name-modal"
+                type="text"
+                readonly
+                class="bg-slate-900/50 border border-emerald-400/80 rounded-lg px-3 py-2 text-sm cursor-not-allowed"
+                value="${currentUser ? currentUser.fullName : ""}"
+              />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label for="quiz-desc-modal" class="text-sm font-medium">Deskripsi Singkat</label>
+              <textarea
+                id="quiz-desc-modal"
+                rows="3"
+                class="input-glow focus-visible-ring bg-slate-900/70 border border-pink-400/80 rounded-lg px-3 py-2 text-sm resize-none"
+                placeholder="Instruksi untuk peserta kuis..."
+              >${currentQuizMeta.desc || ""}</textarea>
+            </div>
+
+            <div class="border-t border-slate-600/60 pt-4">
+              <div class="flex flex-wrap gap-2">
+                <button
+                  id="add-mcq-btn-modal"
+                  type="button"
+                  class="glow-button focus-visible-ring inline-flex items-center gap-1.5 rounded-full bg-pink-500/90 hover:bg-pink-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-pink-200/80"
+                >
+                  <span class="text-lg leading-none">✚</span>
+                  Pilihan Ganda
+                </button>
+
+                <button
+                  id="add-essay-btn-modal"
+                  type="button"
+                  class="glow-button-secondary focus-visible-ring inline-flex items-center gap-1.5 rounded-full bg-sky-500/90 hover:bg-sky-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-sky-200/80"
+                >
+                  <span class="text-lg leading-none">✎</span>
+                  Esai
+                </button>
+
+                <button
+                  id="publish-quiz-btn-modal"
+                  type="button"
+                  class="glow-button focus-visible-ring inline-flex items-center gap-1.5 rounded-full bg-pink-500/90 hover:bg-pink-400 text-xs sm:text-sm font-semibold px-4 py-2 border border-pink-200/80"
+                >
+                  <span>🚀</span>
+                  Publish Kuis
+                </button>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-600/60 pt-4">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold">Daftar Pertanyaan</h3>
+                <span id="question-count-badge-modal" class="text-xs px-2 py-1 rounded-full bg-slate-900/80 border border-emerald-300/80">
+                  ${currentQuestions.length} pertanyaan
+                </span>
+              </div>
+
+              <div id="questions-container-modal" class="space-y-3 max-h-96 overflow-y-auto"></div>
+
+              <div id="no-questions-placeholder-modal" class="mt-3 text-sm text-slate-200/70 italic ${currentQuestions.length > 0 ? 'hidden' : ''}">
+                Belum ada pertanyaan. Tambahkan dengan tombol di atas.
+              </div>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      currentQuizSettingsModal = modal;
+      
+      const closeBtn = modal.querySelector(".modal-close-btn-custom");
+      closeBtn.addEventListener("click", () => {
+        confirmExitQuizSettings(modal);
+      });
+      
+      renderQuestionsInModal(modal);
+      
+      modal.querySelector("#add-mcq-btn-modal").addEventListener("click", () => {
+        addQuestion("mcq");
+        renderQuestionsInModal(modal);
+        updateQuestionCountBadgeModal(modal);
+      });
+      
+      modal.querySelector("#add-essay-btn-modal").addEventListener("click", () => {
+        addQuestion("essay");
+        renderQuestionsInModal(modal);
+        updateQuestionCountBadgeModal(modal);
+      });
+
+      modal.querySelector("#publish-quiz-btn-modal").addEventListener("click", async () => {
+        await publishQuiz();
+      });
+      
+      modal.querySelector("#quiz-icon-modal").addEventListener("input", (e) => {
+        currentQuizMeta.icon = e.target.value || "📝";
+        triggerAutoSave();
+      });
+
+      modal.querySelector("#quiz-title-modal").addEventListener("input", (e) => {
+        currentQuizMeta.title = e.target.value;
+        triggerAutoSave();
+      });
+      
+      modal.querySelector("#quiz-desc-modal").addEventListener("input", (e) => {
+        currentQuizMeta.desc = e.target.value;
+        triggerAutoSave();
+      });
+    }
+
+    function confirmExitQuizSettings(modal) {
+      if (!hasUnsavedChanges && currentQuestions.length === 0) {
+        modal.remove();
+        currentQuizSettingsModal = null;
+        return;
+      }
+      
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold text-amber-400">⚠️ Konfirmasi Keluar</h2>
+          </div>
+          
+          <div class="bg-amber-900/30 border border-amber-400/50 rounded-lg p-4 mb-4">
+            <p class="text-sm text-amber-200 font-semibold mb-2">PERHATIAN!</p>
+            <ul class="text-xs text-amber-200 space-y-1 list-disc list-inside">
+              <li>Semua perubahan yang belum disimpan akan hilang</li>
+              <li>Proses pembuatan kuis akan direset</li>
+              <li>Anda harus membuat kuis dari awal lagi</li>
+            </ul>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-4">Apakah Anda yakin ingin keluar dari pengaturan kuis?</p>
+          
+          <div class="flex gap-2">
+            <button
+              id="confirm-exit-btn"
+              class="focus-visible-ring flex-1 rounded-full bg-red-600/90 hover:bg-red-500/90 text-sm font-semibold px-4 py-2 border border-red-200/80"
+            >
+              Ya, Keluar
+            </button>
+            <button
+              id="cancel-exit-btn"
+              class="focus-visible-ring flex-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 text-sm font-semibold px-4 py-2 border border-slate-500/80"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const confirmModal = showModal(content);
+      
+      confirmModal.querySelector("#confirm-exit-btn").addEventListener("click", () => {
+        currentQuestions = [];
+        currentQuizMeta = { title: "", creator: "", desc: "", icon: "📝" };
+        hasUnsavedChanges = false;
+        
+        confirmModal.remove();
+        modal.remove();
+        currentQuizSettingsModal = null;
+        
+        showToast("Proses pembuatan kuis dibatalkan", "success");
+      });
+      
+      confirmModal.querySelector("#cancel-exit-btn").addEventListener("click", () => {
+        confirmModal.remove();
+      });
+    }
+
+    function updateQuestionCountBadgeModal(modal) {
+      const badge = modal.querySelector("#question-count-badge-modal");
+      const placeholder = modal.querySelector("#no-questions-placeholder-modal");
+      const count = currentQuestions.length;
+      
+      if (badge) {
+        badge.textContent = count + " pertanyaan";
+      }
+      if (placeholder) {
+        placeholder.classList.toggle("hidden", count > 0);
+      }
+    }
+
+    function renderQuestionsInModal(modal) {
+      const container = modal.querySelector("#questions-container-modal");
+      if (!container) return;
+
+      container.innerHTML = "";
+      currentQuestions.forEach(q => {
+        container.appendChild(createQuestionCardElement(q, modal));
+      });
+    }
+
+    function createQuestionCardElement(question, modal = null) {
+      const card = document.createElement("article");
+      card.className = "question-card bg-slate-900/75 border-sky-400/70 px-3 sm:px-4 py-3 sm:py-4 flex flex-col gap-3";
+      card.dataset.questionId = question.id;
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "flex items-start justify-between gap-2";
+
+      const leftInfo = document.createElement("div");
+      const label = document.createElement("div");
+      label.className = "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-sky-500/90 border border-sky-100/90";
+      label.innerHTML = `<span>${question.type === "mcq" ? "❓" : "📝"}</span><span>${question.type === "mcq" ? "Pilihan Ganda" : "Esai"}</span>`;
+
+      const titleText = document.createElement("div");
+      titleText.className = "mt-1 text-sm font-semibold text-slate-50";
+      titleText.textContent = question.prompt || "(Pertanyaan belum diisi)";
+
+      leftInfo.appendChild(label);
+      leftInfo.appendChild(titleText);
+
+      const controls = document.createElement("div");
+      controls.className = "flex items-center gap-1.5";
+
+      const moveUpBtn = document.createElement("button");
+      moveUpBtn.type = "button";
+      moveUpBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-slate-800/90 border border-slate-500/80 hover:bg-slate-700/90";
+      moveUpBtn.textContent = "↑";
+      moveUpBtn.addEventListener("click", () => {
+        moveQuestion(question.id, -1);
+        if (modal) renderQuestionsInModal(modal);
+      });
+
+      const moveDownBtn = document.createElement("button");
+      moveDownBtn.type = "button";
+      moveDownBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-slate-800/90 border border-slate-500/80 hover:bg-slate-700/90";
+      moveDownBtn.textContent = "↓";
+      moveDownBtn.addEventListener("click", () => {
+        moveQuestion(question.id, 1);
+        if (modal) renderQuestionsInModal(modal);
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-rose-600/90 border border-rose-200/80 hover:bg-rose-500/90";
+      deleteBtn.textContent = "Hapus";
+      deleteBtn.addEventListener("click", () => {
+        removeQuestion(question.id);
+        if (modal) {
+          renderQuestionsInModal(modal);
+          updateQuestionCountBadgeModal(modal);
+        }
+      });
+
+      controls.appendChild(moveUpBtn);
+      controls.appendChild(moveDownBtn);
+      controls.appendChild(deleteBtn);
+
+      headerRow.appendChild(leftInfo);
+      headerRow.appendChild(controls);
+      card.appendChild(headerRow);
+
+      const promptGroup = document.createElement("div");
+      promptGroup.className = "flex flex-col gap-1.5";
+      const promptLabel = document.createElement("label");
+      promptLabel.className = "text-xs text-slate-200/90";
+      promptLabel.textContent = "Teks Pertanyaan";
+      const promptInput = document.createElement("textarea");
+      promptInput.rows = 2;
+      promptInput.className = "input-glow focus-visible-ring bg-slate-950/70 border border-sky-300/80 rounded-lg px-2 py-1.5 text-xs resize-none";
+      promptInput.value = question.prompt || "";
+      promptInput.addEventListener("input", (e) => {
+        question.prompt = e.target.value;
+        titleText.textContent = e.target.value || "(Pertanyaan belum diisi)";
+        triggerAutoSave();
+      });
+      promptGroup.appendChild(promptLabel);
+      promptGroup.appendChild(promptInput);
+      card.appendChild(promptGroup);
+
+      if (question.type === "mcq") {
+        const optionsGroup = document.createElement("div");
+        optionsGroup.className = "mt-1 flex flex-col gap-1.5";
+
+        const optionsHeader = document.createElement("div");
+        optionsHeader.className = "flex items-center justify-between gap-2";
+        optionsHeader.innerHTML = `<span class="text-xs text-slate-200/90">Opsi Jawaban</span>`;
+
+        const addOptionBtn = document.createElement("button");
+        addOptionBtn.type = "button";
+        addOptionBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-emerald-600/90 hover:bg-emerald-500/90 border border-emerald-200/80";
+        addOptionBtn.textContent = "+ Opsi";
+        addOptionBtn.addEventListener("click", () => {
+          addOptionToQuestion(question.id);
+          if (modal) renderQuestionsInModal(modal);
+        });
+
+        optionsHeader.appendChild(addOptionBtn);
+
+        const optionsList = document.createElement("div");
+        optionsList.className = "space-y-1.5";
+
+        (question.options || []).forEach(opt => {
+          const optRow = createOptionRow(question, opt, modal);
+          optionsList.appendChild(optRow);
+        });
+
+        optionsGroup.appendChild(optionsHeader);
+        optionsGroup.appendChild(optionsList);
+        card.appendChild(optionsGroup);
+      } else if (question.type === "essay") {
+        const answerGroup = document.createElement("div");
+        answerGroup.className = "flex flex-col gap-1.5";
+        const answerLabel = document.createElement("label");
+        answerLabel.className = "text-xs text-slate-200/90";
+        answerLabel.textContent = "Jawaban Benar (Opsional)";
+        const answerInput = document.createElement("textarea");
+        answerInput.rows = 2;
+        answerInput.className = "input-glow focus-visible-ring bg-slate-950/70 border border-emerald-300/80 rounded-lg px-2 py-1.5 text-xs resize-none";
+        answerInput.value = question.correctAnswer || "";
+        answerInput.placeholder = "Masukkan jawaban yang benar...";
+        answerInput.addEventListener("input", (e) => {
+          question.correctAnswer = e.target.value;
+          triggerAutoSave();
+        });
+        answerGroup.appendChild(answerLabel);
+        answerGroup.appendChild(answerInput);
+        card.appendChild(answerGroup);
+      }
+
+      return card;
+    }
+
+    function createOptionRow(question, opt, modal = null) {
+      const row = document.createElement("div");
+      row.className = "flex items-center gap-1.5";
+
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "correct-" + question.id;
+      radio.className = "focus-visible-ring w-3 h-3";
+      radio.checked = !!opt.isCorrect;
+      radio.addEventListener("change", () => {
+        (question.options || []).forEach(o => {
+          o.isCorrect = o.id === opt.id;
+        });
+        triggerAutoSave();
+      });
+
+      const optInput = document.createElement("input");
+      optInput.type = "text";
+      optInput.className = "input-glow bg-slate-950/70 border border-slate-600/80 rounded px-2 py-1 text-xs flex-1";
+      optInput.value = opt.text || "";
+      optInput.addEventListener("input", (e) => {
+        opt.text = e.target.value;
+        triggerAutoSave();
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-rose-600/90 border border-rose-200/80 hover:bg-rose-500/90";
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", () => {
+        removeOptionFromQuestion(question.id, opt.id);
+        if (modal) renderQuestionsInModal(modal);
+      });
+
+      row.appendChild(radio);
+      row.appendChild(optInput);
+      row.appendChild(delBtn);
+      return row;
+    }
+
+    function addQuestion(type) {
+      const newQ = {
+        id: generateId(),
+        type: type,
+        prompt: "",
+        correctAnswer: "",
+        options: type === "mcq" ? [
+          { id: generateId(), text: "Opsi 1", isCorrect: false },
+          { id: generateId(), text: "Opsi 2", isCorrect: false }
+        ] : []
+      };
+      currentQuestions.push(newQ);
+      triggerAutoSave();
+      
+      if (currentQuestions.length >= 5) {
+        checkMission("create_5_questions");
+      }
+    }
+
+    function removeQuestion(id) {
+      const index = currentQuestions.findIndex(q => q.id === id);
+      if (index !== -1) {
+        currentQuestions.splice(index, 1);
+        triggerAutoSave();
+      }
+    }
+
+    function moveQuestion(id, delta) {
+      const index = currentQuestions.findIndex(q => q.id === id);
+      if (index === -1) return;
+      const newIndex = index + delta;
+      if (newIndex < 0 || newIndex >= currentQuestions.length) return;
+      const [item] = currentQuestions.splice(index, 1);
+      currentQuestions.splice(newIndex, 0, item);
+      triggerAutoSave();
+    }
+
+    function addOptionToQuestion(questionId) {
+      const q = currentQuestions.find(x => x.id === questionId);
+      if (!q || q.type !== "mcq") return;
+      if (!q.options) q.options = [];
+      q.options.push({
+        id: generateId(),
+        text: "Opsi " + (q.options.length + 1),
+        isCorrect: false
+      });
+      triggerAutoSave();
+    }
+
+    function removeOptionFromQuestion(questionId, optionId) {
+      const q = currentQuestions.find(x => x.id === questionId);
+      if (!q || !q.options) return;
+      const index = q.options.findIndex(o => o.id === optionId);
+      if (index !== -1) {
+        q.options.splice(index, 1);
+        triggerAutoSave();
+      }
+    }
+
+    // ========================
+    // MY QUIZZES MODAL
+    // ========================
+    function showMyQuizzesModal() {
+      try {
+        const published = JSON.parse(currentUser.publishedQuizzes || "[]");
+        
+        let content = `
+          <div class="px-6 py-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-bold">📚 Kuis Saya</h2>
+              <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+            </div>
+        `;
+        
+        if (published.length === 0) {
+          content += `
+            <div class="text-center py-8">
+              <div class="text-6xl mb-4">📭</div>
+              <p class="text-slate-300">Belum ada kuis yang dipublikasikan.</p>
+              <p class="text-sm text-slate-400 mt-2">Buat kuis di "Pengaturan Kuis" lalu klik "Publish Kuis"</p>
+            </div>
+          `;
+        } else {
+          content += `<div class="space-y-3 max-h-96 overflow-y-auto">`;
+          
+          published.forEach((quiz, index) => {
+            const quizIcon = quiz.icon || "📝";
+            content += `
+              <div class="quiz-card-with-icon" data-quiz-index="${index}">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="text-5xl">${quizIcon}</div>
+                  <div class="flex-1">
+                    <div class="text-lg font-semibold">${quiz.title}</div>
+                    <div class="text-sm text-slate-300">${quiz.desc || "Tidak ada deskripsi"}</div>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <button class="view-quiz-detail-btn text-sky-400 hover:text-sky-300 text-sm font-semibold" data-index="${index}">👁️ Lihat</button>
+                    <button class="delete-quiz-btn text-red-400 hover:text-red-300 text-sm font-semibold" data-index="${index}">🗑️ Hapus</button>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-slate-400">
+                  <span>Kode: <span class="font-mono text-pink-400">${quiz.code}</span></span>
+                  <span>${quiz.questions.length} pertanyaan</span>
+                </div>
+              </div>
+            `;
+          });
+          
+          content += `</div>`;
+        }
+        
+        content += `
+          </div>
+        `;
+        
+        const modal = showModal(content);
+        
+        modal.querySelectorAll(".view-quiz-detail-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            viewPublishedQuizDetail(index);
+          });
+        });
+
+        modal.querySelectorAll(".delete-quiz-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const index = parseInt(btn.dataset.index);
+            confirmDeleteQuiz(index);
+          });
+        });
+      } catch (e) {
+        console.error("Error showing my quizzes:", e);
+      }
+    }
+
+    function confirmDeleteQuiz(index) {
+      try {
+        const published = JSON.parse(currentUser.publishedQuizzes || "[]");
+        const quiz = published[index];
+        
+        if (!quiz) return;
+        
+        const content = `
+          <div class="px-6 py-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-bold text-red-400">⚠️ Hapus Quiz Permanen</h2>
+              <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+            </div>
+            
+            <div class="bg-red-900/30 border border-red-400/50 rounded-lg p-4 mb-4">
+              <p class="text-sm text-red-200 font-semibold mb-2">PERINGATAN!</p>
+              <ul class="text-xs text-red-200 space-y-1 list-disc list-inside">
+                <li>Quiz "${quiz.title}" akan dihapus permanen</li>
+                <li>Semua jawaban pengguna untuk quiz ini akan hilang</li>
+                <li>Tindakan ini TIDAK DAPAT dibatalkan</li>
+              </ul>
+            </div>
+            
+            <p class="text-sm text-slate-300 mb-4">Masukkan password Anda untuk konfirmasi penghapusan quiz.</p>
+            
+            <form id="delete-quiz-form" class="space-y-4">
+              <div class="flex flex-col gap-1.5">
+                <label for="delete-quiz-password" class="text-sm font-medium">Password</label>
+                <div class="relative">
+                  <input
+                    id="delete-quiz-password"
+                    type="password"
+                    required
+                    class="input-glow focus-visible-ring bg-slate-900/70 border border-red-400/80 rounded-lg px-3 py-2 text-sm w-full pr-10"
+                    placeholder="Masukkan password"
+                  />
+                  <button
+                    type="button"
+                    id="delete-quiz-toggle-password"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm focus-visible-ring rounded px-1"
+                  >
+                    👁️
+                  </button>
+                </div>
+              </div>
+              
+              <div class="flex gap-2">
+                <button
+                  type="submit"
+                  id="delete-quiz-confirm-btn"
+                  class="focus-visible-ring flex-1 rounded-full bg-red-600/90 hover:bg-red-500/90 text-sm font-semibold px-4 py-2 border border-red-200/80"
+                >
+                  Hapus Quiz
+                </button>
+                <button
+                  type="button"
+                  class="modal-close-btn focus-visible-ring flex-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 text-sm font-semibold px-4 py-2 border border-slate-500/80"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        `;
+        
+        const modal = showModal(content);
+        
+        const toggleBtn = modal.querySelector("#delete-quiz-toggle-password");
+        const passwordInput = modal.querySelector("#delete-quiz-password");
+        
+        toggleBtn.addEventListener("click", () => {
+          passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+        });
+        
+        const form = modal.querySelector("#delete-quiz-form");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          
+          if (!currentUser || !currentUser.__backendId) {
+            showToast("User tidak ditemukan!", "error");
+            return;
+          }
+          
+          const password = passwordInput.value;
+          
+          if (password !== currentUser.password) {
+            showToast("Password salah!", "error");
+            return;
+          }
+          
+          const submitBtn = modal.querySelector("#delete-quiz-confirm-btn");
+          const originalContent = showLoading(submitBtn);
+          
+          published.splice(index, 1);
+          
+          const updatedUser = {
+            ...currentUser,
+            publishedQuizzes: JSON.stringify(published)
+          };
+          
+          const result = await window.dataSdk.update(updatedUser);
+          
+          hideLoading(submitBtn, originalContent);
+          
+          if (result.isOk) {
+            currentUser = updatedUser;
+            showToast("Quiz berhasil dihapus!", "success");
+            modal.remove();
+            
+            const parentModals = document.querySelectorAll(".modal-overlay");
+            parentModals.forEach(m => m.remove());
+            
+            showMyQuizzesModal();
+          } else {
+            showToast("Gagal menghapus quiz. Coba lagi.", "error");
+          }
+        });
+      } catch (e) {
+        console.error("Error deleting quiz:", e);
+      }
+    }
+
+    function viewPublishedQuizDetail(index) {
+      try {
+        const published = JSON.parse(currentUser.publishedQuizzes || "[]");
+        const quiz = published[index];
+        
+        if (!quiz) return;
+        
+        const quizIcon = quiz.icon || "📝";
+        
+        let content = `
+          <div class="px-6 py-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="text-5xl">${quizIcon}</div>
+                <h2 class="text-2xl font-bold">${quiz.title}</h2>
+              </div>
+              <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+            </div>
+            <div class="mb-4">
+              <div class="text-sm text-slate-300 mb-2">${quiz.desc || "Tidak ada deskripsi"}</div>
+              <div class="text-xs text-slate-400">Pembuat: ${quiz.creator}</div>
+              <div class="text-xs text-slate-400">Kode: <span class="font-mono text-pink-400">${quiz.code}</span></div>
+            </div>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+        `;
+        
+        quiz.questions.forEach((q, qIndex) => {
+          content += `
+            <div class="bg-slate-900/80 border border-sky-400/70 rounded-lg p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs px-2 py-1 rounded-full bg-sky-500/90 border border-sky-100/90">
+                  ${q.type === "mcq" ? "❓ Pilihan Ganda" : "📝 Esai"}
+                </span>
+                <span class="text-xs text-slate-400">Pertanyaan ${qIndex + 1}</span>
+              </div>
+              <p class="font-semibold mb-2">${q.prompt || "(Pertanyaan belum diisi)"}</p>
+          `;
+          
+          if (q.type === "mcq" && q.options && q.options.length > 0) {
+            content += `<div class="space-y-1 text-sm">`;
+            q.options.forEach((opt, optIndex) => {
+              const letter = String.fromCharCode(65 + optIndex);
+              const isCorrect = opt.isCorrect ? " ✓" : "";
+              content += `
+                <div class="flex items-center gap-2 ${opt.isCorrect ? 'text-green-400 font-semibold' : 'text-slate-300'}">
+                  <span>${letter}.</span>
+                  <span>${opt.text}${isCorrect}</span>
+                </div>
+              `;
+            });
+            content += `</div>`;
+          } else if (q.type === "essay" && q.correctAnswer) {
+            content += `
+              <div class="mt-2 p-2 bg-emerald-900/30 border border-emerald-400/50 rounded">
+                <div class="text-xs text-emerald-300 mb-1">Jawaban Benar:</div>
+                <div class="text-sm text-slate-200">${q.correctAnswer}</div>
+              </div>
+            `;
+          }
+          
+          content += `</div>`;
+        });
+        
+        content += `
+            </div>
+          </div>
+        `;
+        
+        showModal(content);
+      } catch (e) {
+        console.error("Error viewing published quiz:", e);
+      }
+    }
+
+    // ========================
+    // PUBLISH QUIZ
+    // ========================
+    async function publishQuiz() {
+      if (!currentUser || !currentUser.__backendId) {
+        showToast("Anda harus login terlebih dahulu!", "error");
+        return;
+      }
+      
+      const validation = validateQuizForPublish();
+      if (!validation.valid) {
+        showToast(validation.message, "error");
+        return;
+      }
+      
+      const quizCode = generateQuizCode();
+      const publishedQuiz = {
+        code: quizCode,
+        title: currentQuizMeta.title,
+        icon: currentQuizMeta.icon || "📝",
+        creator: currentUser.fullName,
+        creatorId: currentUser.id,
+        desc: currentQuizMeta.desc,
+        questions: JSON.parse(JSON.stringify(currentQuestions)),
+        createdAt: Date.now()
+      };
+      
+      try {
+        const published = JSON.parse(currentUser.publishedQuizzes || "[]");
+        published.push(publishedQuiz);
+        
+        const updatedUser = {
+          ...currentUser,
+          publishedQuizzes: JSON.stringify(published)
+        };
+        
+        const result = await window.dataSdk.update(updatedUser);
+        
+        if (result.isOk) {
+          currentUser = updatedUser;
+          
+          await checkMission("create_quiz");
+          
+          hasUnsavedChanges = false;
+          
+          const quizIcon = currentQuizMeta.icon || "📝";
+          
+          const content = `
+            <div class="px-6 py-6 text-center">
+              <div class="text-6xl mb-4">${quizIcon}</div>
+              <h2 class="text-2xl font-bold mb-2">Kuis Berhasil Dipublikasikan!</h2>
+              <p class="text-slate-300 mb-4">Bagikan kode ini kepada peserta:</p>
+              <div class="bg-slate-900/90 border border-pink-400/80 rounded-lg px-6 py-4 mb-4">
+                <div class="text-3xl font-bold text-pink-400 mb-2">${quizCode}</div>
+                <button
+                  id="copy-code-btn"
+                  class="glow-button-secondary focus-visible-ring rounded-full bg-sky-500/90 hover:bg-sky-400 text-xs font-semibold px-4 py-2 border border-sky-200/80"
+                >
+                  📋 Salin Kode
+                </button>
+              </div>
+              <button
+                class="modal-close-btn glow-button focus-visible-ring rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-6 py-2 border border-pink-200/80"
+              >
+                Tutup
+              </button>
+            </div>
+          `;
+          
+          const modal = showModal(content);
+          
+          const copyBtn = modal.querySelector("#copy-code-btn");
+          copyBtn.addEventListener("click", () => {
+            const temp = document.createElement('input');
+            temp.value = quizCode;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Kode berhasil disalin!", "success");
+          });
+        } else {
+          showToast("Gagal mempublikasikan kuis. Coba lagi.", "error");
+        }
+      } catch (e) {
+        console.error("Error publishing quiz:", e);
+        showToast("Terjadi kesalahan saat mempublikasikan kuis.", "error");
+      }
+    }
+
+    // ========================
+    // JOIN QUIZ MODAL
+    // ========================
+    function showJoinQuizModal() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">🔗 Join Kuis</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-4">Masukkan kode kuis untuk bergabung dan menjawab pertanyaan.</p>
+          
+          <div class="flex gap-2 mb-4">
+            <input
+              id="join-code-input-modal"
+              type="text"
+              placeholder="Masukkan kode..."
+              class="input-glow focus-visible-ring bg-slate-900/70 border border-pink-400/80 rounded-lg px-3 py-2 text-sm flex-1"
+            />
+            <button
+              id="join-quiz-btn-modal"
+              type="button"
+              class="glow-button focus-visible-ring rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-6 py-2 border border-pink-200/80"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const joinBtn = modal.querySelector("#join-quiz-btn-modal");
+      const codeInput = modal.querySelector("#join-code-input-modal");
+      
+      joinBtn.addEventListener("click", () => {
+        const code = codeInput.value.trim().toUpperCase();
+        
+        if (!code) {
+          showToast("Masukkan kode kuis!", "error");
+          return;
+        }
+        
+        let foundQuiz = null;
+        let foundUser = null;
+        
+        for (const user of allUsers) {
+          try {
+            const published = JSON.parse(user.publishedQuizzes || "[]");
+            const quiz = published.find(q => q.code === code);
+            if (quiz) {
+              foundQuiz = quiz;
+              foundUser = user;
+              break;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+        
+        if (!foundQuiz) {
+          showToast("Kode kuis tidak ditemukan!", "error");
+          return;
+        }
+        
+        modal.remove();
+        showAnswerQuizModal(foundQuiz, foundUser);
+      });
+    }
+
+    function showAnswerQuizModal(quiz, quizOwner) {
+      let userAnswers = {};
+      
+      const quizIcon = quiz.icon || "📝";
+      
+      let content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="text-5xl">${quizIcon}</div>
+              <h2 class="text-2xl font-bold">${quiz.title}</h2>
+            </div>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          <div class="mb-4">
+            <div class="text-sm text-slate-300 mb-2">${quiz.desc || "Tidak ada deskripsi"}</div>
+            <div class="text-xs text-slate-400">Pembuat: ${quiz.creator}</div>
+          </div>
+          <form id="answer-quiz-form" class="space-y-4 max-h-96 overflow-y-auto">
+      `;
+      
+      quiz.questions.forEach((q, qIndex) => {
+        content += `
+          <div class="bg-slate-900/80 border border-sky-400/70 rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-1 rounded-full bg-sky-500/90 border border-sky-100/90">
+                ${q.type === "mcq" ? "❓ Pilihan Ganda" : "📝 Esai"}
+              </span>
+              <span class="text-xs text-slate-400">Pertanyaan ${qIndex + 1}</span>
+            </div>
+            <p class="font-semibold mb-3">${q.prompt || "(Pertanyaan belum diisi)"}</p>
+        `;
+        
+        if (q.type === "mcq" && q.options && q.options.length > 0) {
+          content += `<div class="space-y-2">`;
+          q.options.forEach((opt, optIndex) => {
+            const letter = String.fromCharCode(65 + optIndex);
+            content += `
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-800/50 p-2 rounded">
+                <input type="radio" name="q${qIndex}" value="${optIndex}" class="focus-visible-ring" required />
+                <span class="text-sm">${letter}. ${opt.text}</span>
+              </label>
+            `;
+          });
+          content += `</div>`;
+        } else {
+          content += `
+            <textarea
+              name="q${qIndex}"
+              rows="3"
+              required
+              class="input-glow focus-visible-ring bg-slate-950/70 border border-sky-300/80 rounded-lg px-3 py-2 text-sm w-full resize-none"
+              placeholder="Tulis jawaban Anda..."
+            ></textarea>
+          `;
+        }
+        
+        content += `</div>`;
+      });
+      
+      content += `
+          </form>
+          <div class="mt-4 flex gap-2">
+            <button
+              id="submit-answer-btn"
+              class="glow-button focus-visible-ring flex-1 rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-2 border border-pink-200/80"
+            >
+              Kirim Jawaban
+            </button>
+          </div>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const submitBtn = modal.querySelector("#submit-answer-btn");
+      const form = modal.querySelector("#answer-quiz-form");
+      
+      submitBtn.addEventListener("click", async () => {
+        const formData = new FormData(form);
+        let allAnswered = true;
+        
+        quiz.questions.forEach((q, qIndex) => {
+          const answer = formData.get(`q${qIndex}`);
+          if (!answer || answer.trim() === "") {
+            allAnswered = false;
+          } else {
+            userAnswers[`q${qIndex}`] = answer;
+          }
+        });
+        
+        if (!allAnswered) {
+          showToast("Harap jawab semua pertanyaan!", "error");
+          return;
+        }
+        
+        const originalContent = showLoading(submitBtn);
+        
+        try {
+          const answers = JSON.parse(currentUser.quizAnswers || "[]");
+          answers.push({
+            quizCode: quiz.code,
+            quizTitle: quiz.title,
+            quizIcon: quiz.icon || "📝",
+            quizCreatorId: quiz.creatorId,
+            answers: userAnswers,
+            submittedAt: Date.now(),
+            submittedBy: currentUser.id,
+            submittedByName: currentUser.fullName,
+            submittedByEmoji: currentUser.emoji
+          });
+          
+          const updatedUser = {
+            ...currentUser,
+            quizAnswers: JSON.stringify(answers)
+          };
+          
+          const result = await window.dataSdk.update(updatedUser);
+          
+          hideLoading(submitBtn, originalContent);
+          
+          if (result.isOk) {
+            currentUser = updatedUser;
+            await checkMission("answer_quiz");
+            showToast("Jawaban berhasil dikirim!", "success");
+            modal.remove();
+          } else {
+            showToast("Gagal mengirim jawaban. Coba lagi.", "error");
+          }
+        } catch (e) {
+          hideLoading(submitBtn, originalContent);
+          console.error("Error submitting answers:", e);
+          showToast("Terjadi kesalahan saat mengirim jawaban.", "error");
+        }
+      });
+    }
+
+    // ========================
+    // QUIZ ANSWERS MODAL
+    // ========================
+    function showQuizAnswersModal() {
+      try {
+        const myPublished = JSON.parse(currentUser.publishedQuizzes || "[]");
+        const myQuizCodes = myPublished.map(q => q.code);
+        
+        let allAnswers = [];
+        
+        allUsers.forEach(user => {
+          try {
+            const userAnswers = JSON.parse(user.quizAnswers || "[]");
+            userAnswers.forEach(answer => {
+              if (myQuizCodes.includes(answer.quizCode)) {
+                allAnswers.push(answer);
+              }
+            });
+          } catch (e) {
+            // Skip invalid data
+          }
+        });
+        
+        let content = `
+          <div class="px-6 py-6">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-bold">📝 Hasil Jawaban</h2>
+              <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+            </div>
+        `;
+        
+        if (allAnswers.length === 0) {
+          content += `
+            <div class="text-center py-8">
+              <div class="text-6xl mb-4">📭</div>
+              <p class="text-slate-300">Belum ada jawaban dari pengguna lain.</p>
+              <p class="text-sm text-slate-400 mt-2">Bagikan kode kuis Anda agar pengguna lain bisa menjawab!</p>
+            </div>
+          `;
+        } else {
+          content += `<div class="space-y-3 max-h-96 overflow-y-auto">`;
+          
+          allAnswers.forEach((answer, index) => {
+            const date = new Date(answer.submittedAt);
+            const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const quizIcon = answer.quizIcon || "📝";
+            
+            content += `
+              <div class="bg-slate-900/90 border border-green-400/70 rounded-lg px-4 py-3 cursor-pointer hover:border-pink-400/70 transition-all view-answer-detail" data-answer-index="${index}">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="text-3xl">${answer.submittedByEmoji || "😊"}</div>
+                  <div class="flex-1">
+                    <div class="font-semibold">${answer.submittedByName || "Anonim"}</div>
+                    <div class="text-xs text-slate-400">${dateStr}</div>
+                  </div>
+                  <button class="text-sky-400 hover:text-sky-300 text-sm">👁️ Lihat</button>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-slate-300 mb-1">
+                  <span class="text-2xl">${quizIcon}</span>
+                  <span>${answer.quizTitle}</span>
+                </div>
+                <div class="text-xs text-slate-400">Kode: <span class="font-mono text-pink-400">${answer.quizCode}</span></div>
+              </div>
+            `;
+          });
+          
+          content += `</div>`;
+        }
+        
+        content += `
+          </div>
+        `;
+        
+        const modal = showModal(content);
+        
+        modal.querySelectorAll(".view-answer-detail").forEach((item, index) => {
+          item.addEventListener("click", () => {
+            viewAnswerDetail(allAnswers[index]);
+          });
+        });
+      } catch (e) {
+        console.error("Error showing quiz answers:", e);
+      }
+    }
+
+    function viewAnswerDetail(answer) {
+      const quiz = JSON.parse(currentUser.publishedQuizzes || "[]").find(q => q.code === answer.quizCode);
+      
+      if (!quiz) {
+        showToast("Kuis tidak ditemukan!", "error");
+        return;
+      }
+      
+      const date = new Date(answer.submittedAt);
+      const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const quizIcon = answer.quizIcon || "📝";
+      
+      let content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">Jawaban Detail</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <div class="bg-slate-900/90 border border-sky-400/70 rounded-lg px-4 py-3 mb-4">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="text-4xl">${answer.submittedByEmoji || "😊"}</div>
+              <div>
+                <div class="font-bold text-lg">${answer.submittedByName || "Anonim"}</div>
+                <div class="text-xs text-slate-400">${dateStr}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-300 mb-1">
+              <span class="text-2xl">${quizIcon}</span>
+              <span>${answer.quizTitle}</span>
+            </div>
+            <div class="text-xs text-slate-400">Kode: <span class="font-mono text-pink-400">${answer.quizCode}</span></div>
+          </div>
+          
+          <div class="space-y-4 max-h-96 overflow-y-auto">
+      `;
+      
+      quiz.questions.forEach((q, qIndex) => {
+        const userAnswer = answer.answers[`q${qIndex}`];
+        
+        content += `
+          <div class="bg-slate-900/80 border border-sky-400/70 rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-1 rounded-full bg-sky-500/90 border border-sky-100/90">
+                ${q.type === "mcq" ? "❓ Pilihan Ganda" : "📝 Esai"}
+              </span>
+              <span class="text-xs text-slate-400">Pertanyaan ${qIndex + 1}</span>
+            </div>
+            <p class="font-semibold mb-3">${q.prompt}</p>
+        `;
+        
+        if (q.type === "mcq" && q.options) {
+          const userAnswerIndex = parseInt(userAnswer);
+          const userAnswerText = q.options[userAnswerIndex]?.text || "Tidak dijawab";
+          const isCorrect = q.options[userAnswerIndex]?.isCorrect;
+          
+          content += `
+            <div class="mb-2">
+              <div class="text-xs text-slate-400 mb-1">Jawaban Pengguna:</div>
+              <div class="p-2 rounded ${isCorrect ? 'bg-green-900/30 border border-green-400/50' : 'bg-red-900/30 border border-red-400/50'}">
+                <span class="${isCorrect ? 'text-green-300' : 'text-red-300'}">${String.fromCharCode(65 + userAnswerIndex)}. ${userAnswerText}</span>
+                ${isCorrect ? ' ✓' : ' ✗'}
+              </div>
+            </div>
+          `;
+          
+          if (!isCorrect) {
+            const correctOption = q.options.find(opt => opt.isCorrect);
+            if (correctOption) {
+              const correctIndex = q.options.indexOf(correctOption);
+              content += `
+                <div>
+                  <div class="text-xs text-slate-400 mb-1">Jawaban Benar:</div>
+                  <div class="p-2 bg-green-900/30 border border-green-400/50 rounded">
+                    <span class="text-green-300">${String.fromCharCode(65 + correctIndex)}. ${correctOption.text}</span>
+                  </div>
+                </div>
+              `;
+            }
+          }
+        } else {
+          content += `
+            <div class="mb-2">
+              <div class="text-xs text-slate-400 mb-1">Jawaban Pengguna:</div>
+              <div class="p-2 bg-slate-800/50 border border-slate-600/50 rounded">
+                <span class="text-slate-200">${userAnswer || "Tidak dijawab"}</span>
+              </div>
+            </div>
+          `;
+          
+          if (q.correctAnswer) {
+            content += `
+              <div>
+                <div class="text-xs text-slate-400 mb-1">Jawaban Benar:</div>
+                <div class="p-2 bg-green-900/30 border border-green-400/50 rounded">
+                  <span class="text-green-300">${q.correctAnswer}</span>
+                </div>
+              </div>
+            `;
+          }
+        }
+        
+        content += `</div>`;
+      });
+      
+      content += `
+          </div>
+        </div>
+      `;
+      
+      showModal(content);
+    }
+
+    // ========================
+    // SLOTS MODAL
+    // ========================
+    function showSlotsModal() {
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-bold">💾 Slot Penyimpanan</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          
+          <p class="text-sm text-slate-300 mb-4">Simpan rancangan kuis ke salah satu dari 5 slot.</p>
+          
+          <div id="slots-container-modal" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      buildSlotsUIInModal(modal);
+    }
+
+    function buildSlotsUIInModal(modal) {
+      const container = modal.querySelector("#slots-container-modal");
+      if (!container) return;
+
+      container.innerHTML = "";
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        const data = slotsData[i];
+        const unlocked = isSlotUnlocked(i);
+        const slotName = slotNames[i] || "Slot " + (i + 1);
+        const slotIcon = data?.icon || "📝";
+
+        const card = document.createElement("div");
+        card.className = "slot-card bg-slate-900/80 border-teal-400/80 px-3 py-3 flex flex-col gap-2" + (unlocked ? "" : " locked-slot");
+
+        const title = document.createElement("div");
+        title.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              ${data ? `<span class="text-2xl">${slotIcon}</span>` : ''}
+              <div class="text-xs font-semibold text-slate-50">${slotName}</div>
+            </div>
+            ${unlocked ? `<button class="rename-slot-btn text-xs text-sky-400 hover:text-sky-300">✏️</button>` : ""}
+          </div>
+          <div class="text-xs text-slate-300/90">${data ? (data.name || "(Tanpa judul)") : "Kosong"}</div>
+        `;
+
+        const btnRow = document.createElement("div");
+        btnRow.className = "flex flex-wrap gap-1.5";
+
+        if (unlocked) {
+          const saveBtn = document.createElement("button");
+          saveBtn.type = "button";
+          saveBtn.className = "focus-visible-ring text-xs px-2.5 py-1 rounded-full bg-pink-500/90 hover:bg-pink-400 border border-pink-200/80";
+          saveBtn.textContent = "Simpan";
+          saveBtn.addEventListener("click", () => saveToSlot(i));
+
+          const loadBtn = document.createElement("button");
+          loadBtn.type = "button";
+          loadBtn.className = "focus-visible-ring text-xs px-2.5 py-1 rounded-full bg-sky-500/90 hover:bg-sky-400 border border-sky-200/80";
+          loadBtn.textContent = "Muat";
+          loadBtn.disabled = !data;
+          loadBtn.style.opacity = data ? "1" : "0.5";
+          loadBtn.addEventListener("click", () => {
+            if (data) {
+              loadFromSlot(i);
+              modal.remove();
+            }
+          });
+
+          const clearBtn = document.createElement("button");
+          clearBtn.type = "button";
+          clearBtn.className = "focus-visible-ring text-xs px-2 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-500/80";
+          clearBtn.textContent = "Kosongkan";
+          clearBtn.addEventListener("click", () => {
+            clearSlot(i);
+            buildSlotsUIInModal(modal);
+          });
+
+          btnRow.appendChild(saveBtn);
+          btnRow.appendChild(loadBtn);
+          btnRow.appendChild(clearBtn);
+        } else {
+          const unlockBtn = document.createElement("button");
+          unlockBtn.type = "button";
+          unlockBtn.className = "focus-visible-ring text-xs px-3 py-1 rounded-full bg-amber-500/90 hover:bg-amber-400 border border-amber-200/80 font-semibold";
+          unlockBtn.textContent = `Beli Slot (${SLOT_PRICES[i]} 💰)`;
+          unlockBtn.addEventListener("click", async () => {
+            await unlockSlot(i);
+            buildSlotsUIInModal(modal);
+          });
+          btnRow.appendChild(unlockBtn);
+        }
+
+        card.appendChild(title);
+        card.appendChild(btnRow);
+        container.appendChild(card);
+        
+        if (unlocked) {
+          const renameBtn = card.querySelector(".rename-slot-btn");
+          if (renameBtn) {
+            renameBtn.addEventListener("click", () => renameSlot(i, modal));
+          }
+        }
+      }
+    }
+
+    function isSlotUnlocked(index) {
+      if (!currentUser) return false;
+      try {
+        const unlocked = JSON.parse(currentUser.unlockedSlots || "[]");
+        return unlocked.includes(index);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function unlockSlot(index) {
+      if (!currentUser || !currentUser.__backendId) return;
+      
+      const price = SLOT_PRICES[index];
+      const success = await deductBalance(price);
+      
+      if (success) {
+        try {
+          const unlocked = JSON.parse(currentUser.unlockedSlots || "[]");
+          if (!unlocked.includes(index)) {
+            unlocked.push(index);
+          }
+          
+          const updatedUser = {
+            ...currentUser,
+            unlockedSlots: JSON.stringify(unlocked)
+          };
+          
+          const result = await window.dataSdk.update(updatedUser);
+          if (result.isOk) {
+            currentUser = updatedUser;
+            showToast(`Slot ${index + 1} berhasil dibuka!`, "success");
+          }
+        } catch (e) {
+          console.error("Error unlocking slot:", e);
+        }
+      }
+    }
+
+    async function saveToSlot(index) {
+      if (!isSlotUnlocked(index)) {
+        showToast("Slot ini masih terkunci!", "error");
+        return;
+      }
+      
+      const snapshot = {
+        name: currentQuizMeta.title || "Kuis tanpa judul",
+        icon: currentQuizMeta.icon || "📝",
+        savedAt: Date.now(),
+        meta: JSON.parse(JSON.stringify(currentQuizMeta)),
+        questions: JSON.parse(JSON.stringify(currentQuestions))
+      };
+      slotsData[index] = snapshot;
+      
+      if (currentUser && currentUser.__backendId) {
+        const updatedUser = {
+          ...currentUser,
+          quizzes: JSON.stringify(slotsData.filter(s => s !== null)),
+          slotNames: JSON.stringify(slotNames)
+        };
+        
+        await window.dataSdk.update(updatedUser);
+      }
+      
+      showToast("Kuis disimpan ke " + (slotNames[index] || "Slot " + (index + 1)), "success");
+    }
+
+    function loadFromSlot(index) {
+      const data = slotsData[index];
+      if (!data) {
+        showToast((slotNames[index] || "Slot " + (index + 1)) + " kosong", "error");
+        return;
+      }
+      currentQuestions = JSON.parse(JSON.stringify(data.questions || []));
+      currentQuizMeta = JSON.parse(JSON.stringify(data.meta || {}));
+      hasUnsavedChanges = false;
+      showToast((slotNames[index] || "Slot " + (index + 1)) + " dimuat", "success");
+    }
+
+    async function clearSlot(index) {
+      slotsData[index] = null;
+      
+      if (currentUser && currentUser.__backendId) {
+        const updatedUser = {
+          ...currentUser,
+          quizzes: JSON.stringify(slotsData.filter(s => s !== null)),
+          slotNames: JSON.stringify(slotNames)
+        };
+        
+        await window.dataSdk.update(updatedUser);
+      }
+      
+      showToast((slotNames[index] || "Slot " + (index + 1)) + " dikosongkan", "success");
+    }
+
+    async function renameSlot(index, parentModal = null) {
+      const currentName = slotNames[index] || "Slot " + (index + 1);
+      
+      const content = `
+        <div class="px-6 py-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">Ganti Nama Slot</h2>
+            <button class="modal-close-btn text-2xl hover:text-pink-400">×</button>
+          </div>
+          <input
+            id="rename-input"
+            type="text"
+            value="${currentName}"
+            class="input-glow focus-visible-ring bg-slate-900/70 border border-sky-400/80 rounded-lg px-3 py-2 text-sm w-full mb-4"
+            placeholder="Nama slot baru..."
+          />
+          <button
+            id="rename-confirm-btn"
+            class="glow-button focus-visible-ring w-full rounded-full bg-pink-500/90 hover:bg-pink-400 text-sm font-semibold px-4 py-2 border border-pink-200/80"
+          >
+            Simpan
+          </button>
+        </div>
+      `;
+      
+      const modal = showModal(content);
+      
+      const confirmBtn = modal.querySelector("#rename-confirm-btn");
+      const input = modal.querySelector("#rename-input");
+      
+      confirmBtn.addEventListener("click", async () => {
+        const newName = input.value.trim();
+        if (newName) {
+          slotNames[index] = newName;
+          
+          if (currentUser && currentUser.__backendId) {
+            const updatedUser = {
+              ...currentUser,
+              slotNames: JSON.stringify(slotNames)
+            };
+            
+            await window.dataSdk.update(updatedUser);
+          }
+          
+          if (parentModal) {
+            buildSlotsUIInModal(parentModal);
+          }
+          showToast("Nama slot berhasil diubah!", "success");
+          modal.remove();
+        }
+      });
+    }
+
+    // ========================
+    // ELEMENT SDK
+    // ========================
+    function applyConfigToUI(config) {
+      const cfg = config || defaultConfig;
+
+      document.getElementById("main-title").textContent = cfg.main_title || defaultConfig.main_title;
+      document.getElementById("subtitle-text").textContent = cfg.subtitle || defaultConfig.subtitle;
+      document.getElementById("login-title").textContent = cfg.login_title || defaultConfig.login_title;
+      document.getElementById("register-title").textContent = cfg.register_title || defaultConfig.register_title;
+
+      const watermarks = [
+        document.getElementById("watermark-login"),
+        document.getElementById("watermark-register"),
+        document.getElementById("watermark-main")
+      ];
+      watermarks.forEach(el => {
+        if (el) el.textContent = cfg.watermark_text || defaultConfig.watermark_text;
+      });
+
+      const baseSize = cfg.font_size || defaultConfig.font_size;
+      const fontFamily = cfg.font_family || defaultConfig.font_family;
+      const fullFontStack = fontFamily + ", system-ui, sans-serif";
+
+      document.body.style.fontFamily = fullFontStack;
+      document.body.style.fontSize = baseSize + "px";
+
+      const bgColor = cfg.background_color || defaultConfig.background_color;
+      const textColor = cfg.text_color || defaultConfig.text_color;
+      const primaryColor = cfg.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryColor = cfg.secondary_action_color || defaultConfig.secondary_action_color;
+
+      document.body.style.background = bgColor;
+      document.body.style.color = textColor;
+
+      document.querySelectorAll(".glow-button").forEach(btn => {
+        btn.style.backgroundColor = primaryColor;
+        btn.style.borderColor = primaryColor;
+      });
+
+      document.querySelectorAll(".glow-button-secondary").forEach(btn => {
+        btn.style.backgroundColor = secondaryColor;
+        btn.style.borderColor = secondaryColor;
+      });
+    }
+
+    function mapToCapabilities(config) {
+      const cfg = config || defaultConfig;
+
+      return {
+        recolorables: [
+          {
+            get: () => cfg.background_color || defaultConfig.background_color,
+            set: (value) => {
+              if (window.elementSdk) window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => cfg.text_color || defaultConfig.text_color,
+            set: (value) => {
+              if (window.elementSdk) window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => cfg.primary_action_color || defaultConfig.primary_action_color,
+            set: (value) => {
+              if (window.elementSdk) window.elementSdk.setConfig({ primary_action_color: value });
+            }
+          },
+          {
+            get: () => cfg.secondary_action_color || defaultConfig.secondary_action_color,
+            set: (value) => {
+              if (window.elementSdk) window.elementSdk.setConfig({ secondary_action_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => cfg.font_family || defaultConfig.font_family,
+          set: (value) => {
+            if (window.elementSdk) window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => cfg.font_size || defaultConfig.font_size,
+          set: (value) => {
+            if (window.elementSdk) window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      const cfg = config || defaultConfig;
+      return new Map([
+        ["main_title", cfg.main_title || defaultConfig.main_title],
+        ["subtitle", cfg.subtitle || defaultConfig.subtitle],
+        ["login_title", cfg.login_title || defaultConfig.login_title],
+        ["register_title", cfg.register_title || defaultConfig.register_title],
+        ["profile_title", cfg.profile_title || defaultConfig.profile_title],
+        ["quiz_title_label", cfg.quiz_title_label || defaultConfig.quiz_title_label],
+        ["watermark_text", cfg.watermark_text || defaultConfig.watermark_text]
+      ]);
+    }
+
+    // ========================
+    // INITIALIZATION
+    // ========================
+    (async function initApp() {
+      // Password toggle handlers
+      document.getElementById("login-toggle-password").addEventListener("click", function() {
+        const input = document.getElementById("login-password");
+        input.type = input.type === "password" ? "text" : "password";
+      });
+
+      document.getElementById("register-toggle-password").addEventListener("click", function() {
+        const input = document.getElementById("register-password");
+        input.type = input.type === "password" ? "text" : "password";
+      });
+
+      document.getElementById("register-toggle-confirm-password").addEventListener("click", function() {
+        const input = document.getElementById("register-confirm-password");
+        input.type = input.type === "password" ? "text" : "password";
+      });
+
+      // Navigation
+      document.getElementById("goto-register-btn").addEventListener("click", () => showPage("register-page"));
+      document.getElementById("goto-login-btn").addEventListener("click", () => showPage("login-page"));
+      document.getElementById("profile-btn").addEventListener("click", showProfileModal);
+      document.getElementById("logout-btn").addEventListener("click", handleLogout);
+
+      // Forms
+      document.getElementById("login-form").addEventListener("submit", handleLogin);
+      document.getElementById("register-form").addEventListener("submit", handleRegister);
+
+      // Main app cards
+      document.getElementById("quiz-settings-card").addEventListener("click", showQuizSettingsModal);
+      document.getElementById("my-quizzes-card").addEventListener("click", showMyQuizzesModal);
+      document.getElementById("join-quiz-card").addEventListener("click", showJoinQuizModal);
+      document.getElementById("quiz-answers-card").addEventListener("click", showQuizAnswersModal);
+      document.getElementById("slots-card").addEventListener("click", showSlotsModal);
+
+      // Missions and help
+      document.getElementById("daily-reward-btn").addEventListener("click", claimDailyReward);
+      document.getElementById("missions-btn").addEventListener("click", showMissionsModal);
+      document.getElementById("help-btn").addEventListener("click", showHelpModal);
+
+      // Initialize Data SDK
+      if (window.dataSdk) {
+        const initResult = await window.dataSdk.init(dataHandler);
+        if (!initResult.isOk) {
+          console.error("Failed to initialize Data SDK");
+        } else {
+          await autoLogin();
+        }
+      }
+
+      // Initialize Element SDK
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig: defaultConfig,
+          onConfigChange: async (config) => {
+            applyConfigToUI(config);
+          },
+          mapToCapabilities: mapToCapabilities,
+          mapToEditPanelValues: mapToEditPanelValues
+        });
+        applyConfigToUI(window.elementSdk.config || defaultConfig);
+      } else {
+        applyConfigToUI(defaultConfig);
+      }
+    })();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aad79c4e4ae0d4c',t:'MTc2NTIwOTYyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
